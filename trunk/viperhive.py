@@ -246,6 +246,8 @@ class DCHub:
 
         # SIGNAL-SLOT SUBSYSTEM EMITTER
 	def emit(self,signal,*args):
+		logging.debug('emitting %s' % signal)
+		logging.debug('emit map %s' % repr(self.slots))
 		for slot in self.slots.get(signal,[]):
                         try:
                                 if not slot(*args):
@@ -533,6 +535,8 @@ class DCHub:
                                                                 self.send_to_all(info+"|")
                                                                 
                                                                 self.emit('onConnected',user)
+
+								self.send_usercommands_to_nick(nick)
 									#logging.debug (repr(self.nicks))
 									#logging.debug (repr(self.addrs))
 						else:
@@ -580,6 +584,7 @@ class DCHub:
 	def send_to_nick(self,nick,msg):
 		if nick in self.nicks:
 			try:
+				logging.debug('senging %s to %s' % (msg, nick))
 				self.nicks[nick].descr.send(msg)
 			except:
 				logging.error('socket error')
@@ -666,8 +671,10 @@ class DCHub:
 				self.send_to_nick(nick, cmd)
 
 	def send_usercommands_to_all(self):
-		for i in self.nicks.iterkeys():
-			self.send_usercommands_to_nick(i)
+		for nick in self.nicks.iterkeys():
+			for i in range(1,4):
+				self.send_to_nick(nick, '$UserCommand 255 %s |' % i)
+			self.send_usercommands_to_nick(nick)
 
 
 	def on_exit(self):
@@ -799,35 +806,43 @@ class DCHub:
         def LoadPlugin(self,addr,params):
                 # Params should be: 'plugin'
                 if len(params)==1:
-                        logging.debug('loading plugin %s' % params[0])
-                        if params[0] not in self.plugs:
-                               try:
-                                       if 'plugins.'+params[0] not in sys.modules:
-                                               plugins=__import__('plugins.'+params[0])
-                                               plugin=getattr(plugins,params[0])
-                                       else:
-                                               plugin=reload(sys.modules['plugins.'+params[0]])
+			logging.debug('loading plugin %s' % params[0])
+			if params[0] not in self.plugs:
+			       try:
+				       if 'plugins.'+params[0] not in sys.modules:
+					       plugins=__import__('plugins.'+params[0])
+					       plugin=getattr(plugins,params[0])
+				       else:
+					       plugin=reload(sys.modules['plugins.'+params[0]])
 
-                                       
-                                       cls=getattr(plugin,params[0]+'_plugin')
-                                       obj=cls(self)
-                                        
-                                       self.plugs[params[0]]=obj
-                                       self.commands.update(obj.commands)
+				       
+				       cls=getattr(plugin,params[0]+'_plugin')
+				       obj=cls(self)
+					
+				       self.plugs[params[0]]=obj
+				       logging.debug(repr(obj))
+				       logging.debug(dir(obj))
+				       logging.debug(repr(obj.slots))
+				       self.commands.update(obj.commands)
 				       self.usercommands.update(obj.usercommands)
+					
+				       for key,value in obj.slots.iteritems():
+					       if key in self.slots:
+						       self.slots[key].append(value)
+					       else:
+						       self.slots[key]=[value]
 
-                                       for key,value in obj.slots.iteritems():
-                                               if key in self.slots:
-                                                       self.slots[key].append(value)
-                                               else:
-                                                       self.slots[key]=[value]
+				       logging.debug(repr(self.slots))
 
+				       self.send_usercommands_to_all()
 
-                                       return self._('Success')
-                               except:
-                                       return self._('Plugin load error: %s %s' % (traceback.format_exc(), dir(plugins)))
-                        else:
-                               return self._('Plugin already loaded')
+				   
+
+				       return self._('Success')
+			       except:
+				       return self._('Plugin load error: %s' % (traceback.format_exc()))
+			else:
+			       return self._('Plugin already loaded')
                 else:
                         return self._('Params error')
 
