@@ -383,7 +383,7 @@ class DCHub:
 		logging.debug('command recived %s' % cmd)
 		acmd=cmd.split(' ')
 
-		if (self.addrs[addr].level in self.privlist.get('*',[])) or (self.addrs[addr].level in self.privlist.get(acmd[0],[])):
+		if self.check_rights(self.addrs[addr],acmd[0]):
 			if acmd[0] in self.commands:
 				try:
 					if (len(acmd[1:]))>0:
@@ -653,6 +653,23 @@ class DCHub:
 			logging.error('error while loading settings: %s', traceback.format_exc())
 				
 
+	def check_rights(self, user, command):
+		if (user.level in self.privlist.get('*',[])) or (user.level in self.privlist.get(command,[])):
+			return True
+		else:
+			return False
+
+	
+	def send_usercommands_to_nick(self, nick):
+		for name, cmd in self.usercommands.iteritems():
+			if self.check_rights(self.nicks[nick],name):
+				self.send_to_nick(nick, cmd)
+
+	def send_usercommands_to_all(self):
+		for i in self.nicks.iterkeys():
+			self.send_usercommands_to_nick(i)
+
+
 	def on_exit(self):
                 self.save_settings()
 
@@ -748,7 +765,7 @@ class DCHub:
         def Help(self,addr,params=""):
                 # Params can be empty or 'command'
                 if len(params)==1:
-                        if (self.addrs[addr].level in self.privlist.get('*',[])) or (self.addrs[addr].level in self.privlist.get(parms[0],[])):
+                        if self.check_rights(self.addrs[addr], params[0]):
                                 return self.help[params[0]]
                         else:
                                 return self._('Premission denied')
@@ -797,6 +814,7 @@ class DCHub:
                                         
                                        self.plugs[params[0]]=obj
                                        self.commands.update(obj.commands)
+				       self.usercommands.update(obj.usercommands)
 
                                        for key,value in obj.slots.iteritems():
                                                if key in self.slots:
@@ -824,6 +842,9 @@ class DCHub:
                                         for key in plug.commands.iterkeys():
                                                 self.commands.pop(key,None)
 
+					for key in plug.usercommands.iterkeys():
+						self.usercommands.pop(key,None)
+
                                         for key, value in plug.slots.iteritems():
                                                 if key in self.slots:
                                                         if value in self.slots[key]:
@@ -838,6 +859,9 @@ class DCHub:
 				
         def ActivePlugins(self,addr):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
+
+	
+	
 
 
 
