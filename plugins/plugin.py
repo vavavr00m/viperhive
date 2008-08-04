@@ -3,9 +3,9 @@
 
 class plugin(object):
         
-        commands={}
-        slots={}
-	usercommands={}
-        hub=None
         def __init__(self,hub):
                 self.hub=hub
+		self.commands={}
+		self.slots={}
+		self.usercommands={}
+
