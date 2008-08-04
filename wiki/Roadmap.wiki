@@ -1,0 +1,8 @@
+#roadmap of viperhive project
+
+ * usercommands support
+ * ban plugin
+ * antimat/antispam plugin
+ * log plugin
+
+ * _beta testings_
