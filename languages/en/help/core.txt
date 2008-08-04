@@ -1,0 +1,23 @@
+Core - main hub module
+Implement hub protocol, support basic commands and plugin system
+
+CORE COMMANDS:
+
+-- MAIN
+
+Quit - Save settings and quit hub
+
+--- CONFIG
+
+Get - list for aviable settings nodes (core/plugins/reglist/..)
+Get node - print full list of settigs for node. For example: 'Get core' list all settings for core (in YAML format).
+Get node param - print <parameter> in <node> (in YAML format).
+
+Set node parameter value - Set value for parameter in node (can be in YAML format).
+
+-- USER CONTROL
+
+AddReg nick level passwd - Add new nick into register
+DelReg nick - Remove nick from reglist
+ListReg - List registred users
+SetLevel - Set level for registred user
