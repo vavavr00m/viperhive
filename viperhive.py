@@ -85,6 +85,9 @@ class DCHub:
 
         # PLUGINS
         plugs={}
+
+	# USERCOMMANDS
+	usercommands={}
          
 
         def _(self,string):  # Translate function
