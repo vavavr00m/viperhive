@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# vim:fileencoding=utf-8
+
 import yaml
 
 import socket
@@ -14,6 +16,8 @@ import os
 import traceback
 
 logging.basicConfig(level=logging.DEBUG,stream=sys.stdout)
+
+reload(sys)
 
 def lock2key (lock):
         key = {}
@@ -118,7 +122,7 @@ class DCHub:
 		defcore_settings['hubname']='Panter powered hub'
 		defcore_settings['cmdsymbol']='!'
 		defcore_settings['OpLevels']=['owner']
-                defcore_settings['Lang']='en.utf8'
+                defcore_settings['Lang']='ru.cp1251'
                 defcore_settings['autoload']=['motd']
 
 		defreglist={'admin':{'level':'owner', 'passw':'megapass'}}
@@ -190,7 +194,7 @@ class DCHub:
                 # -- LOADING LANGUAGE
 
 		lang=self.core_settings['Lang'].split('.')[0]
-		cpage=self.core_settings['Lang'].split('.')[1]
+		self.charset=cpage=self.core_settings['Lang'].split('.')[1]
 
 
                 try:
@@ -383,6 +387,7 @@ class DCHub:
 
 	def parse_cmd(self,cmd,addr):
 		logging.debug('command recived %s' % cmd)
+                cmd=self.decode(cmd)
 		acmd=cmd.split(' ')
 
 		if self.check_rights(self.addrs[addr],acmd[0]):
@@ -392,8 +397,8 @@ class DCHub:
 						result=self.commands[acmd[0]](addr,acmd[1:])
 					else:
 						result=self.commands[acmd[0]](addr)
-                                        if result!="":
-                                                self.send_to_addr(addr,self._('<HUB> %s|') % str(result))
+                                        if result!='':
+                                                self.send_to_addr(addr,self.encode(self._('<HUB> %s|') % str(result)))
 
 				except SystemExit:
 					raise SystemExit
@@ -633,7 +638,7 @@ class DCHub:
 				try:
 					logging.info('saving settings for %s' % mod)
 					f=open(self.path_to_settings+'/'+mod+'.yaml','w+')
-					f.write(yaml.dump(sett,default_flow_style=False))
+					f.write(yaml.dump(sett,default_flow_style=False).decode('utf-8'))
 					f.close()
 				except:
 					logging.error('fail to load settings for module %s. cause:' % mod)
@@ -882,9 +887,22 @@ class DCHub:
         def ActivePlugins(self,addr):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
 
-	
-	
+        def decode(self, str):
+                try:
+                        us=unicode(str,self.charset)
+                        return us
+                except:
+                        logging.error('ENCODING ERROR %s' % traceback.format_exc())
+                        return str
 
+        def encode(self,str):
+                try:
+                        es=str.encode(self.charset)
+                        return es
+                except:
+                        logging.error('ENCODING ERROR %s' % traceback.format_exc())
+                        return str
+                    
 
 
 #RUNNING HUB

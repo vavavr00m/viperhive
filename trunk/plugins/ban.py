@@ -104,10 +104,10 @@ class ban_plugin(plugin.plugin):
                         if len(params)>2 and timeban:
                                 # time ban
                                 toban=(datetime.datetime.now()+datetime.timedelta(hours=bantime)).strftime('%Y-%m-%dT%H:%M:%S')
-                                reason=" ".join(params[2:])
+                                reason=" ".join(params[2:]).decode(self.hub.charset)
                         else:
                                 toban=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
-                                reason=" ".join(params[1:])
+                                reason=" ".join(params[1:]).decode(self.hub.charset)
 
                         self.banlist['nicks'][params[0]]={'expired':toban,'reason':reason}
 
