@@ -59,43 +59,26 @@ class DCUser:
 
 class DCHub:
 
-        # COMMANDS
-	commands={}
-        
-        # SIGNAL-SLOT EVENT SUBSYSTEM
-	slots={}
+       
 	
         # CONSTANTS
         LOCK='EXTENDEDPROTOCOL_viperhive pk=version0.1-svn'
 	SUPPORTS='NoHello NoGetINFO'
-
-	# SHORTCUTS FOR SETTINGS
-	core_settings={}
-	reglist={}
-	privlist={}
-
-	# FULL SETTINGS SET
-	settings={}
-	path_to_settings=None
-
-        # TRANSLATE SYSTEM
-        lang={}              # Current language array
-        help={}              # Help for current language
-
-
-        # PLUGINS
-        plugs={}
-
-	# USERCOMMANDS
-	usercommands={}
-         
+     
 
         def _(self,string):  # Translate function
                 return self.lang.get(string,string)
 
 
     	def __init__( self ):
+
+                 # COMMANDS
+	        self.commands={}
+        
+                # SIGNAL-SLOT EVENT SUBSYSTEM
+        	self.slots={}
 		
+
 		# COMPILE REGEXPS
 		self.recp={}
 		self.recp['Key']=re.compile('(?<=\$Key ).*(?=[|])')
@@ -117,6 +100,9 @@ class DCHub:
                 self.path_to_settings="./settings/"
                 self.path_to_plugins="./plugins/"
 
+                # ----- SETTINGS -----
+                self.settings={}
+
                 # LOADING SETTINGS
 		self.load_settings()
 
@@ -125,7 +111,6 @@ class DCHub:
 		self.core_settings=self.settings.get('core',{})
 		self.reglist=self.settings.get('reglist',{})
 		self.privlist=self.settings.get('privlist',{})
-
 
 		# DEFAULTS
 		defcore_settings={}
@@ -160,6 +145,8 @@ class DCHub:
 
 		self.KEY=lock2key(self.LOCK)
 
+                # ---- SOCKETS ----
+
         	self.srvsock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
         	self.srvsock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         	self.srvsock.bind( ("",self.core_settings['port']) )
@@ -193,8 +180,14 @@ class DCHub:
                 self.commands['UnloadPlugin']=self.UnloadPlugin
                 self.commands['ActivePlugins']=self.ActivePlugins
                 self.commands['Save']=self.Save
+                self.commands['ReloadPlugin']=self.ReloadPlugin
+                self.commands['RP']=self.ReloadPlugin
 
-                # LOADING LANGUAGE
+                # TRANSLATION SYSTEM
+                self.lang={}              # Current language array
+                self.help={}              # Help for current language
+
+                # -- LOADING LANGUAGE
 
 		lang=self.core_settings['Lang'].split('.')[0]
 		cpage=self.core_settings['Lang'].split('.')[1]
@@ -237,6 +230,13 @@ class DCHub:
                 logging.info('Language loaded: %s strings' % str(len(self.lang)))
                 logging.info('Help loaded: %s strings' % str(len(self.help)))
 
+                # USERCOMMANDS
+	        self.usercommands={}
+
+
+                # PLUGINS
+                self.plugs={}
+
                 # AUTOLOAD PLUGINS
                 for i in self.core_settings['autoload']:
                         self.LoadPlugin(None,[i])
@@ -246,8 +246,8 @@ class DCHub:
 
         # SIGNAL-SLOT SUBSYSTEM EMITTER
 	def emit(self,signal,*args):
-		logging.debug('emitting %s' % signal)
-		logging.debug('emit map %s' % repr(self.slots))
+		#logging.debug('emitting %s' % signal)
+		#logging.debug('emit map %s' % repr(self.slots))
 		for slot in self.slots.get(signal,[]):
                         try:
                                 if not slot(*args):
@@ -513,32 +513,35 @@ class DCHub:
                                                                 self.nicks[nick]=user
                                                                 self.addrs[addr]=user
 
-                                                                self.descriptors.append( newsock )
+                                                                if self.emit('onConnected',user):
+                                                                        self.descriptors.append( newsock )
 
-                                                                if nick in self.reglist:
-                                                                        user.level=self.reglist[nick]['level']
-                                                                        if nick in self.oplevels:
-                                                                                self.send_to_all(self.get_op_list())
+                                                                        if nick in self.reglist:
+                                                                                user.level=self.reglist[nick]['level']
+                                                                                if nick in self.oplevels:
+                                                                                        self.send_to_all(self.get_op_list())
+                                                                        else:
+                                                                                user.level='unreg'
+
+
+                                                                        if not 'NoHello' in clisup:
+                                                                                self.hello.apppend(newsock)
+                                                                        
+                                                                        if not 'NoGetINFO' in s:
+                                                                                newsock.send(self.get_nick_list())
+                                                                        else:
+                                                                                for i in self.nicks.itervalues():
+                                                                                        newsock.send(i.MyINFO+"|")
+                                                                                        newsock.send(self.get_op_list())
+                                                                        self.send_to_all(info+"|")
+                                                                        
+                                                                        
+
+                                                                        self.send_usercommands_to_nick(nick)
+                                                                                #logging.debug (repr(self.nicks))
+                                                                                #logging.debug (repr(self.addrs))
                                                                 else:
-                                                                        user.level='unreg'
-
-
-                                                                if not 'NoHello' in clisup:
-                                                                        self.hello.apppend(newsock)
-                                                                
-                                                                if not 'NoGetINFO' in s:
-                                                                        newsock.send(self.get_nick_list())
-                                                                else:
-                                                                        for i in self.nicks.itervalues():
-                                                                                newsock.send(i.MyINFO+"|")
-                                                                                newsock.send(self.get_op_list())
-                                                                self.send_to_all(info+"|")
-                                                                
-                                                                self.emit('onConnected',user)
-
-								self.send_usercommands_to_nick(nick)
-									#logging.debug (repr(self.nicks))
-									#logging.debug (repr(self.addrs))
+                                                                        self.drop_user(addr, nick, newsock)
 						else:
 							newsock.close()
 					else:
@@ -554,23 +557,28 @@ class DCHub:
 
 
 	def drop_user_by_addr(self,addr):
-		sock=self.addrs[addr].descr
-		nick=self.addrs[addr].nick
-		self.drop_user(addr,nick,sock)
+                if addr in self.addrs:
+                        sock=self.addrs[addr].descr
+                        nick=self.addrs[addr].nick
+                        self.drop_user(addr,nick,sock)
 
-	def drop_user(self,addr,nick,sock):	
-		self.descriptors.remove(sock)
-		del self.addrs[addr]
-		del self.nicks[nick]
-		if sock in self.hello: del self.hello[sock]
-		sock.close
-		logging.debug ('Quit %s' % nick)
-		self.send_to_all('$Quit %s|' % nick)
+	def drop_user(self,addr,nick,sock):
+                try:
+                        if sock in self.descriptors: self.descriptors.remove(sock)
+                        self.addrs.pop(addr)
+                        self.nicks.pop(nick)
+                        if sock in self.hello: self.hello.remove(sock)
+                        sock.close
+                except:
+                        logging.error('something wrong while dropping client %s' % traceback.format_exc())
+                logging.debug ('Quit %s' % nick)
+                self.send_to_all('$Quit %s|' % nick)
 
 	def drop_user_by_nick(self,nick):
-		sock=self.nicks[nick].descr
-		addr=self.nicks[nick].addr
-		self.drop_user(addr,nick,sock)
+                if nick in self.nicks:
+                        sock=self.nicks[nick].descr
+                        addr=self.nicks[nick].addr
+                        self.drop_user(addr,nick,sock)
 
 	def send_to_all(self, msg, omitSock=None):
 		logging.debug('sending to all %s' % msg)
@@ -625,7 +633,7 @@ class DCHub:
 				try:
 					logging.info('saving settings for %s' % mod)
 					f=open(self.path_to_settings+'/'+mod+'.yaml','w+')
-					f.write(yaml.dump(sett))
+					f.write(yaml.dump(sett,default_flow_style=False))
 					f.close()
 				except:
 					logging.error('fail to load settings for module %s. cause:' % mod)
@@ -820,9 +828,6 @@ class DCHub:
 				       obj=cls(self)
 					
 				       self.plugs[params[0]]=obj
-				       logging.debug(repr(obj))
-				       logging.debug(dir(obj))
-				       logging.debug(repr(obj.slots))
 				       self.commands.update(obj.commands)
 				       self.usercommands.update(obj.usercommands)
 					
@@ -832,7 +837,6 @@ class DCHub:
 					       else:
 						       self.slots[key]=[value]
 
-				       logging.debug(repr(self.slots))
 
 				       self.send_usercommands_to_all()
 
@@ -871,6 +875,9 @@ class DCHub:
                                 return self._('Plugin unload error: %s' % traceback.format_exc())
                 else:
                         return self._('Params error')
+
+        def ReloadPlugin(self, addr, params):
+                return 'Unload: %s, Load %s' % (self.UnloadPlugin(addr, params), self.LoadPlugin(addr, params))
 				
         def ActivePlugins(self,addr):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
