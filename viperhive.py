@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 # vim:fileencoding=utf-8
 
 import yaml
@@ -14,6 +13,7 @@ import sys
 import signal
 import os
 import traceback
+import codecs
 
 logging.basicConfig(level=logging.DEBUG,stream=sys.stdout)
 
@@ -124,8 +124,9 @@ class DCHub:
 		defcore_settings['OpLevels']=['owner']
                 defcore_settings['Lang']='ru.cp1251'
                 defcore_settings['autoload']=['motd']
+                defcore_settings['loglevel']=10
 
-		defreglist={'admin':{'level':'owner', 'passw':'megapass'}}
+		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
 
 		defprivlist={'*':['owner']}
@@ -168,6 +169,10 @@ class DCHub:
 		self.threads=[]
 
 		
+                # Reinitialize Logging
+
+                logging.basicConfig(level=self.settings['core']['loglevel'])
+
 
 
 		# REGISTERING CORE COMMANDS
@@ -204,10 +209,10 @@ class DCHub:
                                 # LOAD MESSAGES FOR CURRENT LANGUAGE
 				if self.recp['.yaml'].search(i)!=None:
 					try:
-						arr=yaml.load(open(lpath+i).read())
+						arr=yaml.load(codecs.open(lpath+i,'r','utf-8').read())
 						
-						for key,value in arr.iteritems():
-							arr[key]=value.encode(cpage)
+						#for key,value in arr.iteritems():
+						#	arr[key]=value.encode(cpage)
 
 						self.lang.update(arr)
 					except:
@@ -219,10 +224,10 @@ class DCHub:
                                for i in hfiles:
                                         if self.recp['.yaml'].search(i)!=None:
                                                 try:
-                                                        arr=yaml.load(open(hpath+i).read())
+                                                        arr=yaml.load(codecs.open(hpath+i,'r','utf-8').read())
                                                         
-                                                        for key,value in arr.iteritems():
-                                                                arr[key]=value.encode(cpage)
+                                                        #for key,value in arr.iteritems():
+                                                        #        arr[key]=value.encode(cpage)
 
                                                         self.help.update(arr)
                                                 except:
@@ -278,39 +283,42 @@ class DCHub:
                                                 # Start new thread to avoid hub lock when user connecting
                                                 thread.start_new_thread(self.accept_new_connection,())
 					else:
-						# Received something on a client socket
-						str = sock.recv(4096)
-						# Check to see if the peer socket closed
-						if str == '':
-							host,port = sock.getpeername()
-							addr = '%s:%s' % (host, port)
-							logging.debug ('disconnecting: %s..' % addr)
-							self.emit('onDisconnected',addr)
-							self.drop_user_by_addr(addr)
-						else:
-                                                        # -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
-							i=10
-							while str[-1]!="|" and i>0:
-								str=str+sock.recv(4096)
-								i-=1
-                                                        # --
+                                                try:
+                                                        # Received something on a client socket
+                                                        str = unicode(sock.recv(4096), self.charset)
+                                                        # Check to see if the peer socket closed
+                                                        if str == '':
+                                                                host,port = sock.getpeername()
+                                                                addr = '%s:%s' % (host, port)
+                                                                logging.debug ('disconnecting: %s..' % addr)
+                                                                self.emit('onDisconnected',addr)
+                                                                self.drop_user_by_addr(addr)
+                                                        else:
+                                                                # -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
+                                                                i=10
+                                                                while str[-1]!="|" and i>0:
+                                                                        str=str+unicode(sock.recv(4096),self.charset)
+                                                                        i-=1
+                                                                # --
 
-							host,port = sock.getpeername()
-							addr = '%s:%s' % (host, port)
-							logging.debug ('recived: %s from %s' % (str, addr))
-							if str[-1]=="|":
-								if self.emit('onRecivedSomething',addr):
-									if len(str)>0:
-										msgarr=str.split('|')
-										for i in msgarr:
-											if i=="":
-												pass
-											elif i[0]=="$":
-												self.parse_protocol_cmd(i,addr)
-											else:
-												self.parse_chat_msg(i,addr)
-							else:
-                                                                logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
+                                                                host,port = sock.getpeername()
+                                                                addr = '%s:%s' % (host, port)
+                                                                logging.debug ('recived: %s from %s' % (str, addr))
+                                                                if str[-1]=="|":
+                                                                        if self.emit('onRecivedSomething',addr):
+                                                                                if len(str)>0:
+                                                                                        msgarr=str.split('|')
+                                                                                        for i in msgarr:
+                                                                                                if i=="":
+                                                                                                        pass
+                                                                                                elif i[0]=="$":
+                                                                                                        self.parse_protocol_cmd(i,addr)
+                                                                                                else:
+                                                                                                        self.parse_chat_msg(i,addr)
+                                                                else:
+                                                                        logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
+                                                except:
+                                                        logging.error(traceback.format_exc()) 
 
 		finally:
                         # Save settings before exiting
@@ -387,7 +395,7 @@ class DCHub:
 
 	def parse_cmd(self,cmd,addr):
 		logging.debug('command recived %s' % cmd)
-                cmd=self.decode(cmd)
+                #cmd=self.decode(cmd)
 		acmd=cmd.split(' ')
 
 		if self.check_rights(self.addrs[addr],acmd[0]):
@@ -398,7 +406,7 @@ class DCHub:
 					else:
 						result=self.commands[acmd[0]](addr)
                                         if result!='':
-                                                self.send_to_addr(addr,self.encode(self._('<HUB> %s|') % str(result)))
+                                                self.send_to_addr(addr,self._('<HUB> %s|') % result)
 
 				except SystemExit:
 					raise SystemExit
@@ -432,13 +440,13 @@ class DCHub:
 			addr='%s:%s' % (host, port)
 			logging.debug ('connecting: %s' % addr)
 			if self.emit('onConnecting', addr):
-				newsock.send('$Lock %s|$HubName %s|' % ( self.LOCK , self.core_settings['hubname'] ) )
+				newsock.send('$Lock %s|$HubName %s|' % ( self.LOCK , self.core_settings['hubname'].encode(self.charset) ) )
 				(sock, sw, sx)=select.select([newsock],[],[],15)
 				
 				logging.debug(repr(sock))
 
 				if sock!=[]:
-					s=newsock.recv(4096)
+					s=unicode(newsock.recv(4096),self.charset)
 					supports=self.recp['Supports'].search(s)
 					clisup=[]	
 					validated=True
@@ -465,13 +473,13 @@ class DCHub:
 							newsock.send('$GetPass|')
 							(sock, sw, sx)=select.select([newsock],[],[],15)
 							if sock!=[]:
-								s+=newsock.recv(4096)
+								s+=unicode(newsock.recv(4096),self.charset)
 								passw=self.recp['MyPass'].search(s)
 								if passw!=None:
 									passw=passw.group(0)
 									logging.debug('MyPass %s' % passw)
 								
-									if passw!=self.reglist[nick]['passw']:
+									if passw!=self.reglist[nick]['passwd']:
 										logging.debug('wrong pass')
 										newsock.send('$BadPass|')
 										validated=False
@@ -497,14 +505,14 @@ class DCHub:
 
 					if validated:
 						logging.debug ('validated %s' % nick)
-						newsock.send('$Hello %s|' %  nick)
+						newsock.send('$Hello %s|' %  nick.encode(self.charset))
 						newsock.send('$Supports %s|' % self.SUPPORTS)
 						for i in self.hello:
 							i.send('$Hello %s|' %  nick)
 						if not 'MyINFO' in s:
 							(sock, sw, sx)=select.select([newsock],[],[],15)
 							if sock!=[]:
-								s+=newsock.recv(4096)
+								s+=unicode(newsock.recv(4096),self.charset)
 						info=self.recp['MyINFO'].search(s)
 						if info!=None:
 							tr=True
@@ -536,8 +544,8 @@ class DCHub:
                                                                                 newsock.send(self.get_nick_list())
                                                                         else:
                                                                                 for i in self.nicks.itervalues():
-                                                                                        newsock.send(i.MyINFO+"|")
-                                                                                        newsock.send(self.get_op_list())
+                                                                                        newsock.send(i.MyINFO.encode(self.charset)+"|")
+                                                                                        newsock.send(self.get_op_list().encode(self.charset))
                                                                         self.send_to_all(info+"|")
                                                                         
                                                                         
@@ -587,20 +595,24 @@ class DCHub:
 
 	def send_to_all(self, msg, omitSock=None):
 		logging.debug('sending to all %s' % msg)
+                if not (len(msg)>0 and msg[-1]=="|"):
+                                msg=msg+"|"
 		for sock in self.descriptors:
 			if sock!=self.srvsock and sock!=omitSock:
 				try:
-					sock.send(msg)
+					sock.send(msg.encode(self.charset))
 				except:
-					logging.error('socket error')
+					logging.error('socket error %s' % traceback.format_exc())
 
 	def send_to_nick(self,nick,msg):
 		if nick in self.nicks:
+                        if not (len(msg)>0 and msg[-1]=="|"):
+                                msg=msg+"|"
 			try:
 				logging.debug('senging %s to %s' % (msg, nick))
-				self.nicks[nick].descr.send(msg)
+				self.nicks[nick].descr.send(msg.encode(self.charset))
 			except:
-				logging.error('socket error')
+				logging.error('socket error %s' % traceback.format_exc() )
 		else:
 			logging.warning('send to unknown nick: %s' % nick)
 
@@ -609,9 +621,9 @@ class DCHub:
                         if not (len(msg)>0 and msg[-1]=="|"):
                                 msg=msg+"|"
 			try:
-				self.addrs[addr].descr.send(msg)
+				self.addrs[addr].descr.send(msg.encode(self.charset))
 			except:
-				logging.error('socket error')
+				logging.error('socket error %s' % traceback.format_exc())
 		else:
 			logging.warning('uknown addres: %s' % addr)
 
@@ -637,9 +649,8 @@ class DCHub:
 			for mod, sett in self.settings.items():
 				try:
 					logging.info('saving settings for %s' % mod)
-					f=open(self.path_to_settings+'/'+mod+'.yaml','w+')
-					f.write(yaml.dump(sett,default_flow_style=False).decode('utf-8'))
-					f.close()
+					f=open(self.path_to_settings+'/'+mod+'.yaml','wb')
+					f.write(yaml.dump(sett,default_flow_style=False,allow_unicode=True))
 				except:
 					logging.error('fail to load settings for module %s. cause:' % mod)
 					logging.error('%s' %  traceback.format_exc())
@@ -659,7 +670,7 @@ class DCHub:
                                         mod=self.recp['before.yaml'].search(i).group(0)
                                         logging.debug('loading settings for %s' % mod)
                                         try:
-                                                f=open(self.path_to_settings+'/'+ i)
+                                                f=codecs.open(self.path_to_settings+'/'+ i,'r','utf-8')
                                                 text=f.read()
                                                 dct=yaml.load(text)
                                                 if dct!=None:
@@ -681,13 +692,13 @@ class DCHub:
 	def send_usercommands_to_nick(self, nick):
 		for name, cmd in self.usercommands.iteritems():
 			if self.check_rights(self.nicks[nick],name):
-				self.send_to_nick(nick, cmd)
+				self.send_to_nick(nick, cmd.encode(self.charset))
 
 	def send_usercommands_to_all(self):
 		for nick in self.nicks.iterkeys():
 			for i in range(1,4):
 				self.send_to_nick(nick, '$UserCommand 255 %s |' % i)
-			self.send_usercommands_to_nick(nick)
+			self.send_usercommands_to_nick(nick, cmd.encode(self.charset))
 
 
 	def on_exit(self):
@@ -716,14 +727,14 @@ class DCHub:
         def Get(self,addr, params=[]): #Getting params or list
                 # Params can be 'core/plugin name' 'parameter' or 'core/plugin name'
 		if len(params)==0:
-			return self._(' -- Aviable settings --:\n%s' ) % (yaml.dump(self.settings.keys()))
+			return self._(' -- Aviable settings --:\n%s' ) % (unicode(yaml.dump(self.settings.keys(),allow_unicode=True),'utf-8'))
 
 		elif len(params)==1:
                         if params[0] in self.settings:
-                                return self._(' -- Settings for %s --\n%s' ) % (params[0], yaml.dump(self.settings[params[0]]),)
+                                return self._(' -- Settings for %s --\n%s' ) % (params[0], unicode(yaml.dump(self.settings[params[0]],allow_unicode=True),'utf-8'))
                 elif len(params)==2:
                         if params[0] in self.settings and params[1] in self.settings[params[0]]:
-                                return self._(' -- Settings for %s - %s --\n%s' ) % ( params[0], params[1], yaml.dump(self.settings[params[0]][params[1]]),)
+                                return self._(' -- Settings for %s - %s --\n%s' ) % ( params[0], params[1], unicode(yaml.dump(self.settings[params[0]][params[1]],allow_unicode=True),'utf-8'))
                         else:
                                 return self._('Params error')
                 else:
