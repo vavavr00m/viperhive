@@ -607,7 +607,7 @@ class DCHub:
                         if user.descr==sock:
                                 N=nick
 
-                for addr, user in self.addr.iteritems():
+                for addr, user in self.addrs.iteritems():
                         if user.descr==addr:
                                 A=addr
 
