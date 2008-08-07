@@ -79,7 +79,7 @@ class DCHub:
 
     	def __init__( self ):
 
-                 # COMMANDS
+                # COMMANDS
 	        self.commands={}
         
                 # SIGNAL-SLOT EVENT SUBSYSTEM
@@ -489,7 +489,7 @@ class DCHub:
 										validated=False
 									else:
 										if nick in self.nicks:
-											logging.debut('reconnecting identified user')
+											logging.debug('reconnecting identified user')
 											self.nicks[nick].descr.send('<HUB> youre connecting from different machine. bye.|')
 											self.drop_user_by_nick(nick)
 								else:
@@ -505,7 +505,7 @@ class DCHub:
 							else:
 								validated=True
 					else:
-						validated=False
+                                                validated=False
 
 					if validated:
 						logging.debug ('validated %s' % nick)
@@ -527,19 +527,19 @@ class DCHub:
 								logging.warning('wrong myinfo from: %s addr: %s info: %s ' % (nick, addr, info))
 								tr=False
 							if tr:
+                                                                if nick in self.reglist:
+                                                                        user.level=self.reglist[nick]['level']
+                                                                else:
+                                                                        user.level='unreg'
                                                                 self.nicks[nick]=user
                                                                 self.addrs[addr]=user
                                                                 try:
                                                                         if self.emit('onConnected',user):
                                                                                 self.descriptors.append( newsock )
 
-                                                                                if nick in self.reglist:
-                                                                                        user.level=self.reglist[nick]['level']
-                                                                                        if nick in self.oplevels:
-                                                                                                self.send_to_all(self.get_op_list())
-                                                                                else:
-                                                                                        user.level='unreg'
-
+                                                                                
+                                                                                if nick in self.oplevels:
+                                                                                        self.send_to_all(self.get_op_list())
 
                                                                                 if not 'NoHello' in clisup:
                                                                                         self.hello.apppend(newsock)
@@ -671,7 +671,7 @@ class DCHub:
 				try:
 					logging.info('saving settings for %s' % mod)
 					f=open(self.path_to_settings+'/'+mod+'.yaml','wb')
-					f.write(yaml.dump(sett,default_flow_style=False,allow_unicode=True))
+					f.write(yaml.safe_dump(sett,default_flow_style=False,allow_unicode=True))
 				except:
 					logging.error('fail to load settings for module %s. cause:' % mod)
 					logging.error('%s' %  traceback.format_exc())
@@ -750,14 +750,14 @@ class DCHub:
         def Get(self,addr, params=[]): #Getting params or list
                 # Params can be 'core/plugin name' 'parameter' or 'core/plugin name'
 		if len(params)==0:
-			return self._(' -- Aviable settings --:\n%s' ) % (unicode(yaml.dump(self.settings.keys(),allow_unicode=True),'utf-8'))
+			return self._(' -- Aviable settings --:\n%s' ) % (unicode(yaml.safe_dump(self.settings.keys(),allow_unicode=True),'utf-8'))
 
 		elif len(params)==1:
                         if params[0] in self.settings:
-                                return self._(' -- Settings for %s --\n%s' ) % (params[0], unicode(yaml.dump(self.settings.get(params[0],''),allow_unicode=True),'utf-8'))
+                                return self._(' -- Settings for %s --\n%s' ) % (params[0], unicode(yaml.safe_dump(self.settings.get(params[0],''),allow_unicode=True),'utf-8'))
                 elif len(params)==2:
                         if params[0] in self.settings and params[1] in self.settings[params[0]]:
-                                return self._(' -- Settings for %s - %s --\n%s' ) % ( params[0], params[1], unicode(yaml.dump(self.settings[params[0]][params[1]],allow_unicode=True),'utf-8'))
+                                return self._(' -- Settings for %s - %s --\n%s' ) % ( params[0], params[1], unicode(yaml.safe_dump(self.settings[params[0]][params[1]],allow_unicode=True),'utf-8'))
                         else:
                                 return self._('Params error')
                 else:
@@ -907,6 +907,8 @@ class DCHub:
                                                 if key in self.slots:
                                                         if value in self.slots[key]:
                                                                 self.slots[key].remove(value)
+
+                                        self.send_usercommands_to_all()
                                         return self._('Success')
                                 else:
                                         return self._('Plugin not loaded')
