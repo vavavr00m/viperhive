@@ -321,6 +321,7 @@ class DCHub:
                                                                 else:
                                                                         logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
                                                 except:
+                                                        self.drop_user_by_sock(sock)
                                                         logging.error(traceback.format_exc()) 
 
 		finally:
@@ -528,35 +529,37 @@ class DCHub:
 							if tr:
                                                                 self.nicks[nick]=user
                                                                 self.addrs[addr]=user
+                                                                try:
+                                                                        if self.emit('onConnected',user):
+                                                                                self.descriptors.append( newsock )
 
-                                                                if self.emit('onConnected',user):
-                                                                        self.descriptors.append( newsock )
+                                                                                if nick in self.reglist:
+                                                                                        user.level=self.reglist[nick]['level']
+                                                                                        if nick in self.oplevels:
+                                                                                                self.send_to_all(self.get_op_list())
+                                                                                else:
+                                                                                        user.level='unreg'
 
-                                                                        if nick in self.reglist:
-                                                                                user.level=self.reglist[nick]['level']
-                                                                                if nick in self.oplevels:
-                                                                                        self.send_to_all(self.get_op_list())
+
+                                                                                if not 'NoHello' in clisup:
+                                                                                        self.hello.apppend(newsock)
+                                                                                
+                                                                                if not 'NoGetINFO' in s:
+                                                                                        newsock.send(self.get_nick_list())
+                                                                                else:
+                                                                                        for i in self.nicks.itervalues():
+                                                                                                newsock.send(i.MyINFO.encode(self.charset)+"|")
+                                                                                                newsock.send(self.get_op_list().encode(self.charset))
+                                                                                self.send_to_all(info+"|")
+                                                                                
+                                                                                
+
+                                                                                self.send_usercommands_to_nick(nick)
+                                                                                        #logging.debug (repr(self.nicks))
+                                                                                        #logging.debug (repr(self.addrs))
                                                                         else:
-                                                                                user.level='unreg'
-
-
-                                                                        if not 'NoHello' in clisup:
-                                                                                self.hello.apppend(newsock)
-                                                                        
-                                                                        if not 'NoGetINFO' in s:
-                                                                                newsock.send(self.get_nick_list())
-                                                                        else:
-                                                                                for i in self.nicks.itervalues():
-                                                                                        newsock.send(i.MyINFO.encode(self.charset)+"|")
-                                                                                        newsock.send(self.get_op_list().encode(self.charset))
-                                                                        self.send_to_all(info+"|")
-                                                                        
-                                                                        
-
-                                                                        self.send_usercommands_to_nick(nick)
-                                                                                #logging.debug (repr(self.nicks))
-                                                                                #logging.debug (repr(self.addrs))
-                                                                else:
+                                                                                self.drop_user(addr, nick, newsock)
+                                                                except:
                                                                         self.drop_user(addr, nick, newsock)
 						else:
 							newsock.close()
@@ -595,6 +598,21 @@ class DCHub:
                         sock=self.nicks[nick].descr
                         addr=self.nicks[nick].addr
                         self.drop_user(addr,nick,sock)
+
+        def drop_user_by_sock(self, sock):
+                A=None
+                N=None
+
+                for nick, user in self.nicks.iteritems():
+                        if user.descr==sock:
+                                N=nick
+
+                for addr, user in self.addr.iteritems():
+                        if user.descr==addr:
+                                A=addr
+
+                self.drop_user(A,N,sock)
+
 
 	def send_to_all(self, msg, omitSock=None):
 		logging.debug('sending to all %s' % msg)
@@ -693,15 +711,15 @@ class DCHub:
 
 	
 	def send_usercommands_to_nick(self, nick):
+                for i in range(1,4):
+			self.send_to_nick(nick, '$UserCommand 255 %s |' % i)
 		for name, cmd in self.usercommands.iteritems():
 			if self.check_rights(self.nicks[nick],name):
-				self.send_to_nick(nick, cmd.encode(self.charset))
+				self.send_to_nick(nick, cmd)
 
 	def send_usercommands_to_all(self):
 		for nick in self.nicks.iterkeys():
-			for i in range(1,4):
-				self.send_to_nick(nick, '$UserCommand 255 %s |' % i)
-			self.send_usercommands_to_nick(nick, cmd.encode(self.charset))
+			self.send_usercommands_to_nick(nick)
 
 
 	def on_exit(self):
@@ -901,21 +919,6 @@ class DCHub:
         def ActivePlugins(self,addr):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
 
-        def decode(self, str):
-                try:
-                        us=unicode(str,self.charset)
-                        return us
-                except:
-                        logging.error('ENCODING ERROR %s' % traceback.format_exc())
-                        return str
-
-        def encode(self,str):
-                try:
-                        es=str.encode(self.charset)
-                        return es
-                except:
-                        logging.error('ENCODING ERROR %s' % traceback.format_exc())
-                        return str
                     
 
 

@@ -12,7 +12,6 @@ class say_plugin(plugin.plugin):
 	def __init__(self, hub):
 		super(say_plugin,self).__init__(hub)
                 self.commands['say']=self.say
-		#self.usercommands['say']='$Usercommand 1 2 '+hub._('say from')+'$<%[mynick]> !say %[nick] %[line:>:]&#124;|'
 		self.usercommands['say']='$UserCommand 1 2 '+hub._('say from')+'$<%[mynick]> !say %[nick] %[line:'+hub._('message')+':]&#124;|'
 	def say(self,addr,params):
 		#params 'nick' 'message'
