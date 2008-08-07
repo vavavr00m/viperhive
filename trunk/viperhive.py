@@ -320,9 +320,10 @@ class DCHub:
                                                                                                         self.parse_chat_msg(i,addr)
                                                                 else:
                                                                         logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
+                                               
                                                 except:
                                                         self.drop_user_by_sock(sock)
-                                                        logging.error(traceback.format_exc()) 
+                                                        logging.debug('User Lost: %s' % traceback.format_exc()) 
 
 		finally:
                         # Save settings before exiting
@@ -490,8 +491,12 @@ class DCHub:
 									else:
 										if nick in self.nicks:
 											logging.debug('reconnecting identified user')
-											self.nicks[nick].descr.send('<HUB> youre connecting from different machine. bye.|')
-											self.drop_user_by_nick(nick)
+                                                                                        try:
+											        self.nicks[nick].descr.send('<HUB> youre connecting from different machine. bye.|')
+                                                                                        except:
+                                                                                                pass
+                                                                                        finally:
+											        self.drop_user_by_nick(nick)
 								else:
 									validated=False
 							else:
@@ -584,14 +589,15 @@ class DCHub:
 	def drop_user(self,addr,nick,sock):
                 try:
                         if sock in self.descriptors: self.descriptors.remove(sock)
-                        self.addrs.pop(addr)
-                        self.nicks.pop(nick)
+                        self.addrs.pop(addr,'')
+                        self.nicks.pop(nick,'')
                         if sock in self.hello: self.hello.remove(sock)
                         sock.close
                 except:
                         logging.error('something wrong while dropping client %s' % traceback.format_exc())
                 logging.debug ('Quit %s' % nick)
                 self.send_to_all('$Quit %s|' % nick)
+                self.emit('onUserLeft',addr,nick)
 
 	def drop_user_by_nick(self,nick):
                 if nick in self.nicks:
