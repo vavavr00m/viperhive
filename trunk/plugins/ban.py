@@ -3,6 +3,8 @@
 # -- BAN PLUGIN
 #
 # Ban user by nick or ip
+#
+# Support usercommands
 # 
 # --
 
@@ -29,6 +31,12 @@ class ban_plugin(plugin.plugin):
 
                 
                 self.slots['onConnected']=self.onConnected
+                
+
+                self.usercommands['Ban']='$UserCommand 1 2 '+hub._('Ban\\Ban User (Nick, IP)')+'$<%[mynick]> !Ban %[nick] %[line:'+hub._('time,reason')+':]&#124;|'
+                self.usercommands['UnBanNick']='$UserCommand 1 2 '+hub._('Ban\\Unban Nick')+'$<%[mynick]> !UnBanNick %[line:'+hub._('Nick')+':]&#124;|'
+                self.usercommands['UnBanAddr']='$UserCommand 1 2 '+hub._('Ban\\Unban IP')+'$<%[mynick]> !UnBanAddr %[line:'+hub._('IP')+':]&#124;|'
+                self.usercommands['ListBans']='$UserCommand 1 2 '+hub._('Ban\\ListBans')+'$<%[mynick]> !ListBans &#124;|'
 
         def onConnected(self,user):
                 if user.nick in self.banlist['nicks']:
@@ -104,10 +112,10 @@ class ban_plugin(plugin.plugin):
                         if len(params)>2 and timeban:
                                 # time ban
                                 toban=(datetime.datetime.now()+datetime.timedelta(hours=bantime)).strftime('%Y-%m-%dT%H:%M:%S')
-                                reason=" ".join(params[2:]).decode(self.hub.charset)
+                                reason=" ".join(params[2:])
                         else:
                                 toban=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
-                                reason=" ".join(params[1:]).decode(self.hub.charset)
+                                reason=" ".join(params[1:])
 
                         self.banlist['nicks'][params[0]]={'expired':toban,'reason':reason}
 
@@ -132,5 +140,5 @@ class ban_plugin(plugin.plugin):
                 else:
                         return self.hub._('Not Found')
 
-        def ListBans(self, addr):
-                return self.hub._(' -- Ban List --\n')+yaml.dump(self.hub.settings['ban'],default_flow_style=False)
+        def ListBans(self, addr, params):
+                return self.hub._(' -- Ban List --\n')+unicode(yaml.safe_dump(self.hub.settings['ban'],default_flow_style=False, allow_unicode=True),'utf-8')

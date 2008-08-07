@@ -730,14 +730,16 @@ class DCHub:
         
         #  -- Hub Control
 
-	def Quit(self,addr):
+	def Quit(self,addr,params=[]):
 		self.work=False
 		exit
                 return True
         
-        def Set(self,addr,params): # Setting param for core or plugin
+        def Set(self,addr,params=[]): # Setting param for core or plugin
                 # Params should be: 'core/plugin name' 'parameter' 'value'
                 # Cause 'value' can contain spaces - join params[2:]
+                if len(params)<2:
+                        return self._('Params error')
                 try:
                         value=yaml.load(" ".join(params[2:]))
                         self.settings[params[0]][params[1]]=value
@@ -752,7 +754,7 @@ class DCHub:
 
 		elif len(params)==1:
                         if params[0] in self.settings:
-                                return self._(' -- Settings for %s --\n%s' ) % (params[0], unicode(yaml.dump(self.settings[params[0]],allow_unicode=True),'utf-8'))
+                                return self._(' -- Settings for %s --\n%s' ) % (params[0], unicode(yaml.dump(self.settings.get(params[0],''),allow_unicode=True),'utf-8'))
                 elif len(params)==2:
                         if params[0] in self.settings and params[1] in self.settings[params[0]]:
                                 return self._(' -- Settings for %s - %s --\n%s' ) % ( params[0], params[1], unicode(yaml.dump(self.settings[params[0]][params[1]],allow_unicode=True),'utf-8'))
@@ -761,7 +763,7 @@ class DCHub:
                 else:
                         return self._('Params error')
 
-        def Save(self):
+        def Save(self, params):
                 try:
                         self.save_settings()
                         return True
@@ -771,7 +773,7 @@ class DCHub:
         
         # -- User Control
 
-        def AddReg(self,addr,params):
+        def AddReg(self,addr,params=[]):
                 # Params should be: 'nick' 'level' 'passwd'
                 if len(params)==3:
                         # Check if 'nick' already registred
@@ -783,7 +785,7 @@ class DCHub:
                 else:
                         return self._('Params error.')
 
-        def DelReg(self,addr,params):
+        def DelReg(self,addr,params=[]):
                 # Params should be 'nick'
                 if len(params)==1:
                         # Check if 'nick' registred
@@ -800,7 +802,7 @@ class DCHub:
                 return self._('--- REGISTRED USERES --- \n') + "\n".join('nick: %s level: %s' % (nick, param['level'],) for nick, param in self.reglist.iteritems())
 	
 
-	def SetLevel(self,addr,params):
+	def SetLevel(self,addr,params=[]):
 		# Params should be: 'nick' 'level'
 		if len(params)==2:
 			if params[0] in self.reglist:
@@ -848,7 +850,7 @@ class DCHub:
 		except:
 			logging.error('error while listing plugins: %s', traceback.format_exc())
 
-        def LoadPlugin(self,addr,params):
+        def LoadPlugin(self,addr,params=[]):
                 # Params should be: 'plugin'
                 if len(params)==1:
 			logging.debug('loading plugin %s' % params[0])
@@ -887,7 +889,7 @@ class DCHub:
                 else:
                         return self._('Params error')
 
-        def UnloadPlugin(self,addr,params):
+        def UnloadPlugin(self,addr,params=[]):
                 # Params should be: 'plugin'
                 logging.debug('unloading plugin')
                 if len(params)==1:
@@ -913,10 +915,10 @@ class DCHub:
                 else:
                         return self._('Params error')
 
-        def ReloadPlugin(self, addr, params):
+        def ReloadPlugin(self, addr, params=[]):
                 return 'Unload: %s, Load %s' % (self.UnloadPlugin(addr, params), self.LoadPlugin(addr, params))
 				
-        def ActivePlugins(self,addr):
+        def ActivePlugins(self,addr=[]):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
 
                     
