@@ -34,21 +34,24 @@ def lock2key (lock):
         return out
 
 class DCUser:
-	nick=None
-	description=None
-	connection=None
-	flag=None
-	mail=None
-	share=None
-	addr=None
-	descr=None
-	MyINFO=None
-	level=0
+
 	def __init__(self,myinfo="",descr=None,addr=None):
-		if len(myinfo)>0:
+		
+                self.nick=None
+	        self.connection=None
+	        self.flag=None
+	        self.mail=None
+	        self.share=None
+	        self.descr=None
+	        self.MyINFO=None
+	        self.level=0
+                
+                if len(myinfo)>0:
 			self.upInfo(myinfo)
 		self.descr=descr
 		self.addr=addr
+
+                
 
 	def upInfo(self,myinfo):
 		self.MyINFO=myinfo
