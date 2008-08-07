@@ -4,6 +4,7 @@
 || *Event* || *Args* ||
 ||onConnecting||'ip:port'||
 ||onConnected||DCUser||
+||OnUserLeft||'ip:port' (if known) 'nick' (if known)||
 ||onDisconnected ||'ip:port'||
 ||onRecivedSomething ||'ip:port'||
 ||onConnectToMe || 'from_ip:port' 'remote_nick'||
