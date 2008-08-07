@@ -18,7 +18,7 @@ class ban_plugin(plugin.plugin):
 		super(ban_plugin,self).__init__(hub)
 
                 if 'ban' not in self.hub.settings:
-                        self.hub.settings['ban']={'nicks':{},'addrs':{}}
+                        self.hub.settings['ban']={'nicks':{},'addrs':{},'immune':['owner']}
 
                 self.banlist=self.hub.settings['ban']
 
@@ -33,12 +33,14 @@ class ban_plugin(plugin.plugin):
                 self.slots['onConnected']=self.onConnected
                 
 
-                self.usercommands['Ban']='$UserCommand 1 2 '+hub._('Ban\\Ban User (Nick, IP)')+'$<%[mynick]> !Ban %[nick] %[line:'+hub._('time,reason')+':]&#124;|'
+                self.usercommands['Ban']='$UserCommand 1 2 '+hub._('Ban\\Ban User (Nick, IP)')+'$<%[mynick]> !Ban %[nick] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Ban\\Time Ban User (Nick, IP)')+'$<%[mynick]> !Ban %[nick] %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
                 self.usercommands['UnBanNick']='$UserCommand 1 2 '+hub._('Ban\\Unban Nick')+'$<%[mynick]> !UnBanNick %[line:'+hub._('Nick')+':]&#124;|'
                 self.usercommands['UnBanAddr']='$UserCommand 1 2 '+hub._('Ban\\Unban IP')+'$<%[mynick]> !UnBanAddr %[line:'+hub._('IP')+':]&#124;|'
                 self.usercommands['ListBans']='$UserCommand 1 2 '+hub._('Ban\\ListBans')+'$<%[mynick]> !ListBans &#124;|'
 
         def onConnected(self,user):
+                if user.level in self.banlist['immune']:
+                        return True
                 if user.nick in self.banlist['nicks']:
                         if datetime.datetime.strptime(self.banlist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')>datetime.datetime.now():
                                 return False
