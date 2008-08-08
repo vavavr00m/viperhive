@@ -179,21 +179,23 @@ class DCHub:
 
 
 		# REGISTERING CORE COMMANDS
-		self.commands['Quit']=self.Quit
-                self.commands['AddReg']=self.AddReg
-                self.commands['DelReg']=self.DelReg
-                self.commands['ListReg']=self.ListReg
-                self.commands['Get']=self.Get
-                self.commands['Set']=self.Set
-		self.commands['SetLevel']=self.SetLevel
-                self.commands['Help']=self.Help
-                self.commands['ListPlugins']=self.ListPlugins
-                self.commands['LoadPlugin']=self.LoadPlugin
-                self.commands['UnloadPlugin']=self.UnloadPlugin
-                self.commands['ActivePlugins']=self.ActivePlugins
-                self.commands['Save']=self.Save
+		self.commands['Quit']=self.Quit #Usercommands +
+                self.commands['AddReg']=self.AddReg #Usercommands +
+                self.commands['DelReg']=self.DelReg  #Usercommands +
+                self.commands['ListReg']=self.ListReg #Usercommands +
+                self.commands['Get']=self.Get #Usercommands +
+                self.commands['Set']=self.Set #Usercommands +
+		self.commands['SetLevel']=self.SetLevel #Usercommands +
+                self.commands['Help']=self.Help #Usercommands +
+                self.commands['ListPlugins']=self.ListPlugins #Usercommands +
+                self.commands['LoadPlugin']=self.LoadPlugin #Usercommands +
+                self.commands['UnloadPlugin']=self.UnloadPlugin #Usercommands +
+                self.commands['ActivePlugins']=self.ActivePlugins #Usercommands +
+                self.commands['Save']=self.Save #Usercommands +
                 self.commands['ReloadPlugin']=self.ReloadPlugin
-                self.commands['RP']=self.ReloadPlugin
+                self.commands['RP']=self.ReloadPlugin #Usercommands +
+                self.commands['Passwd']=self.Passwd
+                self.commands['PasswdTo']=self.PasswdTo #Usercommands +
 
                 # TRANSLATION SYSTEM
                 self.lang={}              # Current language array
@@ -244,6 +246,33 @@ class DCHub:
 
                 # USERCOMMANDS
 	        self.usercommands={}
+                # -- CORE USERCOMMANDS --
+
+                self.usercommands['Quit']='$UserCommand 1 2 '+self._('Core\\Quit')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Quit&#124;|'
+                self.usercommands['Save']='$UserCommand 1 2 '+self._('Core\\Save settings')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Save&#124;|'
+
+                self.usercommands['Help']='$UserCommand 1 2 '+self._('Help')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Help&#124;|'
+
+                # -- settings get/set
+                self.usercommands['Get']='$UserCommand 1 2 '+self._('Settings\\List settings files')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get&#124;|$UserCommand 1 2 '+self._('Settings\\List settings in file...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get %[line:'+self._('file?')+':]&#124;|'
+                self.usercommands['Set']='$UserCommand 1 2 '+self._('Settings\\Set variable')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set %[line:'+self._('File')+':] %[line:'+self._('Variable')+':] %[line:'+self._('New_Value')+':]&#124;|'
+
+                # -- User control
+                self.usercommands['AddReg']='$UserCommand 1 2 '+self._('Users\\Register selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[nick] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|$UserCommand 1 2 '+self._('Users\\Register nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[line:'+self._('Nick')+':] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|'
+                self.usercommands['ListReg']='$UserCommand 1 2 '+self._('Users\\List registred nicks')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListReg&#124;|'
+                self.usercommands['DelReg']='$UserCommand 1 2 '+self._('Users\\Unreg selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[nick]&#124;|$UserCommand 1 2 '+self._('Users\\Unreg nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[line:'+self._('Nick')+':]&#124;|'
+                self.usercommands['SetLevel']='$UserCommand 1 2 '+self._('Users\\Set level for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetLevel %[nick] %[line:'+self._('Level')+':]'
+                self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Plugins\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
+                
+                # -- Plugin control
+                self.usercommands['ListPlugins']='$UserCommand 1 2 '+self._('Plugins\\List aviable plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListPlugins&#124;|'
+                self.usercommands['ActivePlugins']='$UserCommand 1 2 '+self._('Plugins\\List active plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ActivePlugins&#124;|'
+                self.usercommands['LoadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Load plugin..')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'LoadPlugin %[line:'+self._('plugin')+':]&#124;|'
+                self.usercommands['UnloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Unload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'UnloadPlugin %[line:'+self._('plugin')+':]&#124;|'
+                self.usercommands['ReloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Reload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ReloadPlugin %[line:'+self._('plugin')+':]&#124;|'
+                
+                # -- Self control
+                self.usercommands['Passwd']='$UserCommand 1 2 '+self._('Me\\Set MY password...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Passwd %[line:'+self._('newpassword')+':]&#124;|'
 
 
                 # PLUGINS
@@ -924,10 +953,39 @@ class DCHub:
                         return self._('Params error')
 
         def ReloadPlugin(self, addr, params=[]):
+                # Params 'plugin'
                 return 'Unload: %s, Load %s' % (self.UnloadPlugin(addr, params), self.LoadPlugin(addr, params))
 				
-        def ActivePlugins(self,addr=[]):
+        def ActivePlugins(self,addr,params=[]):
                 return self._(' -- ACTIVE PLUGINS -- \n')+"\n".join(self.plugs.iterkeys())
+
+        def Passwd(self,addr,params=[]):
+                # Params 'nick'
+                if len(params)>0:
+                        newpass=" ".join(params)
+                        nick=self.addrs[addr].nick
+                        if nick in self.reglist:
+                                self.reglist[nick]['passwd']=newpass
+                                return self._('Your password updated')
+                        else:
+                                return self._('You are not registred')
+
+                else:
+                        return self._('Params error')
+        def PasswdTo(self,addr,params=[]):
+                # Params: 'nick' 'newpass'
+                if len(params)>1:
+                        nick=params[0]
+                        newpass=" ".join(params)
+                        if nick in self.reglist:
+                                self.reglist[nick]['passwd']=newpass
+                                return self._('User password updated')
+                        else:
+                                return self._('User not registred')
+
+                else:
+                        return self._('Params error')
+
 
                     
 

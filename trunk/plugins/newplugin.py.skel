@@ -26,7 +26,7 @@ class name_plugin(plugin.plugin):
 		#self.slots['on?']=self.on?
                 
                 # --- REGISTERING USERCOMMANDS
-		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU/ITEM')+'$<%[mynick]> !COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
+		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU\\ITEM')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
 		
 	#def COMMAND(self,addr,params):
 	#	#params 'nick' 'message'

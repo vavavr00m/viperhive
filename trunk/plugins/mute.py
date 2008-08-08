@@ -37,8 +37,8 @@ class mute_plugin(plugin.plugin):
                 self.slots['onPrivMsg']=self.onPrivMsg
                 
                 # --- REGISTERING USERCOMMANDS
-		self.usercommands['mute']='$UserCommand 1 2 '+hub._('Mute\\Mute mc+pm')+'$<%[mynick]> !mute %[nick] all %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute mc')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute pm')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc+pm')+'$<%[mynick]> !mute %[nick] all  %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute pm')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
-                self.usercommands['unmute']='$UserCommand 1 2 '+hub._('Mute\\Unmute')+'$<%[mynick]> !unmute %[nick]&#124;|'
+		self.usercommands['mute']='$UserCommand 1 2 '+hub._('Mute\\Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all  %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
+                self.usercommands['unmute']='$UserCommand 1 2 '+hub._('Mute\\Unmute selected nick')+'$<%[mynick]> !unmute %[nick]&#124;|'
 	
         def onMainChatMsg(self, from_nick, msg):
                 if from_nick not in self.hub.nicks:
