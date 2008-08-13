@@ -126,7 +126,7 @@ class DCHub:
 		defcore_settings['cmdsymbol']='!'
 		defcore_settings['OpLevels']=['owner']
                 defcore_settings['Lang']='ru.cp1251'
-                defcore_settings['autoload']=['motd']
+                defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd']
                 defcore_settings['loglevel']=10
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
