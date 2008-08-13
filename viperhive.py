@@ -196,6 +196,7 @@ class DCHub:
                 self.commands['RP']=self.ReloadPlugin #Usercommands +
                 self.commands['Passwd']=self.Passwd
                 self.commands['PasswdTo']=self.PasswdTo #Usercommands +
+                self.commands['Kick']=self.Kick #Usercommands +
 
                 # TRANSLATION SYSTEM
                 self.lang={}              # Current language array
@@ -263,6 +264,7 @@ class DCHub:
                 self.usercommands['DelReg']='$UserCommand 1 2 '+self._('Users\\Unreg selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[nick]&#124;|$UserCommand 1 2 '+self._('Users\\Unreg nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[line:'+self._('Nick')+':]&#124;|'
                 self.usercommands['SetLevel']='$UserCommand 1 2 '+self._('Users\\Set level for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetLevel %[nick] %[line:'+self._('Level')+':]'
                 self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Plugins\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
+                self.usercommands['Kick']='$UserCommand 1 2 '+self._('Users\\Kick selected user')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Kick %[nick]&#124;|'
                 
                 # -- Plugin control
                 self.usercommands['ListPlugins']='$UserCommand 1 2 '+self._('Plugins\\List aviable plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListPlugins&#124;|'
@@ -304,6 +306,11 @@ class DCHub:
 			while self.work:
 				(sread, swrite, sexc) = select.select( self.descriptors, [], [], 1 )
 
+                                #logging.debug(repr(self.nicks))
+                                #logging.debug(repr(self.addrs))
+                                #logging.debug(repr(self.descriptors))
+                                #logging.debug(repr(self.hello))
+
 				for thr in self.threads[:]:
 					if not thr.isAlive():
 						self.threads.remove(thr)
@@ -314,6 +321,7 @@ class DCHub:
 						# self.accept_new_connection()
                                                 # Start new thread to avoid hub lock when user connecting
                                                 thread.start_new_thread(self.accept_new_connection,())
+                                                #self.accept_new_connection()
 					else:
                                                 try:
                                                         # Received something on a client socket
@@ -460,6 +468,7 @@ class DCHub:
 			if acmd[0][1:-1]==self.addrs[addr].nick:
 				if acmd[1][0]==self.core_settings['cmdsymbol']:
 					thread.start_new_thread(self.parse_cmd,(acmd[1][1:],addr,))
+                                        #self.parse_cmd(acmd[1][1:],addr)
 				else:
 					if self.emit('onMainChatMsg',acmd[0][1:-1],acmd[1]):
 						self.send_to_all(msg+"|")
@@ -616,12 +625,13 @@ class DCHub:
                         self.drop_user(addr,nick,sock)
 
 	def drop_user(self,addr,nick,sock):
+                logging.debug('dropping %s %s %s' % (addr, nick, sock))
                 try:
                         if sock in self.descriptors: self.descriptors.remove(sock)
                         self.addrs.pop(addr,'')
                         self.nicks.pop(nick,'')
                         if sock in self.hello: self.hello.remove(sock)
-                        sock.close
+                        sock.close()
                 except:
                         logging.error('something wrong while dropping client %s' % traceback.format_exc())
                 logging.debug ('Quit %s' % nick)
@@ -847,6 +857,20 @@ class DCHub:
 				return self._('No such user')
 		else:
 			return self._('Params error.')
+
+
+
+        def Kick (self, addr, params=[]):
+                # Params should be: 'nick'
+
+                if len(params)==1:
+                        if params[0] in self.nicks:
+                                self.drop_user_by_nick(params[0])
+                                return self._('Success')
+                        else:
+                                return self._('No such user')
+                else:
+                        return self._('Params error')
         
 
         # -- Help System
@@ -985,6 +1009,43 @@ class DCHub:
 
                 else:
                         return self._('Params error')
+
+
+
+
+
+
+
+
+
+
+        # -- EXTENDED FUNCTIONS USED FOR SIMPLIFY SOME WRK
+
+        def masksyms(self, str):
+                ''' return string with ASCII 0, 5, 36, 96, 124, 126 masked with: &# ;. e.g. chr(5) -> &#5; '''
+                cds=[0, 5, 36, 96, 124, 126]
+                syms=map(chr, cds)
+                for i in syms:
+                        str=str.replace(i,'&#%s;' % i)
+
+                return str
+
+        def unmasksyms(self, str):
+                ''' return string with ASCII 0, 5, 36, 96, 124, 126 unmasked from: &# ; mask. e.g. &#5; -> chr(5) '''
+                cds=[0, 5, 36, 96, 124, 126]
+                for i in cds:
+                        str=str.replace('&#%s;' % i, chr(i))
+
+                return str
+                
+                
+
+
+
+
+
+
+
 
 
                     
