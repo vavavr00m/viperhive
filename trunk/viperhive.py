@@ -263,7 +263,7 @@ class DCHub:
                 self.usercommands['ListReg']='$UserCommand 1 2 '+self._('Users\\List registred nicks')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListReg&#124;|'
                 self.usercommands['DelReg']='$UserCommand 1 2 '+self._('Users\\Unreg selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[nick]&#124;|$UserCommand 1 2 '+self._('Users\\Unreg nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[line:'+self._('Nick')+':]&#124;|'
                 self.usercommands['SetLevel']='$UserCommand 1 2 '+self._('Users\\Set level for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetLevel %[nick] %[line:'+self._('Level')+':]'
-                self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Plugins\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
+                self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Users\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
                 self.usercommands['Kick']='$UserCommand 1 2 '+self._('Users\\Kick selected user')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Kick %[nick]&#124;|'
                 
                 # -- Plugin control
