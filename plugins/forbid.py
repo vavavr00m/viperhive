@@ -23,7 +23,7 @@ class forbid_plugin(plugin.plugin):
 
                 # --- SETTINGS FOR PLUGIN ---
                 if 'forbid' not in self.hub.settings:
-                        self.hub.settings['forbid']={'regexps':{}, 'immune':[]}
+                        self.hub.settings['forbid']={'regexps':{}, 'immune':[owner,]}
                         # an item:
                                 # 'regexp':
                                         # { source, state, action }
