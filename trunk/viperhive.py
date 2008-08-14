@@ -14,6 +14,7 @@ import signal
 import os
 import traceback
 import codecs
+import time
 
 logging.basicConfig(level=logging.DEBUG,stream=sys.stdout)
 
@@ -81,7 +82,6 @@ class DCHub:
 
                 # COMMANDS
 	        self.commands={}
-        
                 # SIGNAL-SLOT EVENT SUBSYSTEM
         	self.slots={}
 		
@@ -107,6 +107,7 @@ class DCHub:
                 self.path_to_settings="./settings/"
                 self.path_to_plugins="./plugins/"
 
+
                 # ----- SETTINGS -----
                 self.settings={}
 
@@ -125,6 +126,7 @@ class DCHub:
 		defcore_settings['hubname']='Panter powered hub'
 		defcore_settings['cmdsymbol']='!'
 		defcore_settings['OpLevels']=['owner']
+                defcore_settings['Protected']=['owner', 'op']
                 defcore_settings['Lang']='ru.cp1251'
                 defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd']
                 defcore_settings['loglevel']=10
@@ -132,7 +134,7 @@ class DCHub:
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
 
-		defprivlist={'*':['owner']}
+                defprivlist={'owner':['*']}
 
 		# If loaded core_settings miss some stuff - load defaults
                 if len(self.core_settings)==0:
@@ -150,7 +152,7 @@ class DCHub:
 
 		# MORE SHORTCUTS
 		self.oplevels=self.core_settings['OpLevels']
-
+                self.protected=self.core_settings['Protected']
 		self.KEY=lock2key(self.LOCK)
 
                 # ---- SOCKETS ----
@@ -197,6 +199,7 @@ class DCHub:
                 self.commands['Passwd']=self.Passwd
                 self.commands['PasswdTo']=self.PasswdTo #Usercommands +
                 self.commands['Kick']=self.Kick #Usercommands +
+                self.commands['UI']=self.UI
 
                 # TRANSLATION SYSTEM
                 self.lang={}              # Current language array
@@ -265,6 +268,7 @@ class DCHub:
                 self.usercommands['SetLevel']='$UserCommand 1 2 '+self._('Users\\Set level for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetLevel %[nick] %[line:'+self._('Level')+':]'
                 self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Users\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
                 self.usercommands['Kick']='$UserCommand 1 2 '+self._('Users\\Kick selected user')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Kick %[nick]&#124;|'
+                self.usercommands['UI']='$UserCommand 1 2 '+self._('Users\\User Info')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'UI %[nick]&#124;|'
                 
                 # -- Plugin control
                 self.usercommands['ListPlugins']='$UserCommand 1 2 '+self._('Plugins\\List aviable plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListPlugins&#124;|'
@@ -299,10 +303,20 @@ class DCHub:
                                 logging.error('PLUGIN ERROR: %s' % traceback.format_exc())
 		return True
 
+        def pinger( self ):
+                logging.info('Pinger started!')
+                while self.work:
+                        for nick in self.nicks.iterkeys():
+                                self.send_to_nick(nick,"|")
+                        time.sleep(120)
+                return True
+                                       
+        
         def run( self ):
                 logging.info ('Hub started!')
 		try:
 			self.work=True
+                        thread.start_new_thread(self.pinger,())
 			while self.work:
 				(sread, swrite, sexc) = select.select( self.descriptors, [], [], 1 )
 
@@ -678,7 +692,8 @@ class DCHub:
 				logging.debug('senging %s to %s' % (msg, nick))
 				self.nicks[nick].descr.send(msg.encode(self.charset))
 			except:
-				logging.error('socket error %s' % traceback.format_exc() )
+                                self.drop_user_by_nick(nick)
+				logging.error('socket error %s. user lost!' % traceback.format_exc() )
 		else:
 			logging.warning('send to unknown nick: %s' % nick)
 
@@ -749,7 +764,8 @@ class DCHub:
 				
 
 	def check_rights(self, user, command):
-		if (user.level in self.privlist.get('*',[])) or (user.level in self.privlist.get(command,[])):
+                rights=self.privlist.get(user.level,[])
+                if ('*' in rights) or (command in rights):
 			return True
 		else:
 			return False
@@ -835,8 +851,11 @@ class DCHub:
                 if len(params)==1:
                         # Check if 'nick' registred
                         if params[0] in self.reglist:
-                                del self.reglist[params[0]]
-                                return self._('User deleted')
+                                if params[0] not in self.protected:
+                                        del self.reglist[params[0]]
+                                        return self._('User deleted')
+                                else:
+                                        return self._('User protected!')
 
                         else:
                                 return self._('User not registred')
@@ -1002,6 +1021,8 @@ class DCHub:
                         nick=params[0]
                         newpass=" ".join(params)
                         if nick in self.reglist:
+                                if nick in self.protected:
+                                        return self._('User protected!')
                                 self.reglist[nick]['passwd']=newpass
                                 return self._('User password updated')
                         else:
@@ -1009,7 +1030,18 @@ class DCHub:
 
                 else:
                         return self._('Params error')
+        
+        def UI(self,addr,params=[]):
+                # params: 'nick'
 
+                if len(params)==1:
+                        user=self.nicks.get(params[0],None)
+                        if user!=None:
+                                return self._(' -- USER %s INFO --\n addres: %s\n level: %s\n is op?: %s\n is protected?: %s') % (user.nick, user.addr, user.level, repr(user.level in self.oplevels), repr(user.level in self.protected))
+                        else:
+                                return self._('No such user')
+                else:
+                        return self._('Params error')
 
 
 
