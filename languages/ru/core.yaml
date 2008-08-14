@@ -54,3 +54,6 @@
 "You are not registred": "Вы не зарегистрированны"
 "User password updated": "Пароль пользователя обновлен"
 "Plugins\\List active plugins": "Плагины\\Список активных плагинов"
+" -- USER %s INFO --\n addres: %s\n level: %s\n is op?: %s\n is protected?: %s": " -- Пользователь %s --\n адрес: %s\n уровень: %s\n оператор?: %s\n защищен?: %s"
+"Users\\User Info": "Пользователи\\Информация о пользователе"
+"User protected!": "Пользователь защищен!"

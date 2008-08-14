@@ -36,7 +36,7 @@ class ban_plugin(plugin.plugin):
                 self.usercommands['Ban']='$UserCommand 1 2 '+hub._('Ban\\Ban User (Nick, IP)...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'Ban %[nick] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Ban\\Time Ban User (Nick, IP)...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'Ban %[nick] %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
                 self.usercommands['UnBanNick']='$UserCommand 1 2 '+hub._('Ban\\Unban Nick...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'UnBanNick %[line:'+hub._('Nick')+':]&#124;|'
                 self.usercommands['UnBanAddr']='$UserCommand 1 2 '+hub._('Ban\\Unban IP...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'UnBanAddr %[line:'+hub._('IP')+':]&#124;|'
-                self.usercommands['ListBans']='$UserCommand 1 2 '+hub._('Ban\\ListBans...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'ListBans &#124;|'
+                self.usercommands['ListBans']='$UserCommand 1 2 '+hub._('Ban\\ListBans')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'ListBans &#124;|'
 
         def onConnected(self,user):
                 if user.level in self.banlist['immune']:
