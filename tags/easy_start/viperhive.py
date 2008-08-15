@@ -123,7 +123,7 @@ class DCHub:
 		# DEFAULTS
 		defcore_settings={}
 		defcore_settings['port']=1411
-		defcore_settings['hubname']='Panter powered hub'
+		defcore_settings['hubname']='Viperhive powered hub'
 		defcore_settings['cmdsymbol']='!'
 		defcore_settings['OpLevels']=['owner']
                 defcore_settings['Protected']=['owner', 'op']
@@ -175,10 +175,10 @@ class DCHub:
 
 		
                 # Reinitialize Logging
-
+                logging.debug('Set logging level to %s' % str(self.settings['core']['loglevel']))
+                reload(sys.modules['logging'])
                 logging.basicConfig(level=self.settings['core']['loglevel'])
-
-
+                
 
 		# REGISTERING CORE COMMANDS
 		self.commands['Quit']=self.Quit #Usercommands +
@@ -884,6 +884,8 @@ class DCHub:
 
                 if len(params)==1:
                         if params[0] in self.nicks:
+                                if self.nicks[params[0]].level in self.protected:
+                                        return self._('User protected!')
                                 self.drop_user_by_nick(params[0])
                                 return self._('Success')
                         else:
@@ -904,13 +906,10 @@ class DCHub:
                         
                 elif len(params)==0:
                         ans=self._(' -- Aviable commands for you--\n')
-                        if  (self.addrs[addr].level in self.privlist.get('*',[])):
-                                return ans+"\n".join(self.help.get(key, key) for key in self.commands.iterkeys())
-                        else:
-                                for key in self.commands.iterkeys():
-                                      if (self.addrs[addr].level in self.privlist.get(key,[])):
-                                              ans+='%s\n\n' % self.help.get(key,key)
-                                return ans
+                        for cmd in self.commands.iterkeys():
+			        if self.check_rights(self.addrs[addr],cmd):
+				        ans+='%s\n' % self.help.get(cmd,cmd)
+                        return ans
                 else:
                         return self._('Params error')
 
@@ -1019,9 +1018,9 @@ class DCHub:
                 # Params: 'nick' 'newpass'
                 if len(params)>1:
                         nick=params[0]
-                        newpass=" ".join(params)
+                        newpass=" ".join(params[1:])
                         if nick in self.reglist:
-                                if nick in self.protected:
+                                if self.nicks[nick].level in self.protected:
                                         return self._('User protected!')
                                 self.reglist[nick]['passwd']=newpass
                                 return self._('User password updated')
@@ -1056,9 +1055,8 @@ class DCHub:
         def masksyms(self, str):
                 ''' return string with ASCII 0, 5, 36, 96, 124, 126 masked with: &# ;. e.g. chr(5) -> &#5; '''
                 cds=[0, 5, 36, 96, 124, 126]
-                syms=map(chr, cds)
-                for i in syms:
-                        str=str.replace(i,'&#%s;' % i)
+                for i in cds:
+                        str=str.replace(chr(i),'&#%s;' % i)
 
                 return str
 
