@@ -31,14 +31,17 @@ class mute_plugin(plugin.plugin):
                 self.commands['unmute']=self.unmute
                 self.commands['unmuteNick']=self.unmuteNick
                 self.commands['unmuteAddr']=self.unmuteAddr
+                self.commands['ListMute']=self.ListMute
 		
                 # --- REGISTERING SLOTS (On Event reaction)
 		self.slots['onMainChatMsg']=self.onMainChatMsg
                 self.slots['onPrivMsg']=self.onPrivMsg
                 
                 # --- REGISTERING USERCOMMANDS
-		self.usercommands['mute']='$UserCommand 1 2 '+hub._('Mute\\Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all  %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
+		self.usercommands['mute']='$UserCommand 1 2 '+hub._('Mute\\Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc+pm...')+'$<%[mynick]> !mute %[nick] all %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute mc...')+'$<%[mynick]> !mute %[nick] mc %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|$UserCommand 1 2 '+hub._('Mute\\Time Mute pm...')+'$<%[mynick]> !mute %[nick] pm %[line:'+hub._('time')+':] %[line:'+hub._('reason')+':]&#124;|'
                 self.usercommands['unmute']='$UserCommand 1 2 '+hub._('Mute\\Unmute selected nick')+'$<%[mynick]> !unmute %[nick]&#124;|'
+                self.usercommands['ListMute']='$UserCommand 1 2 '+hub._('Mute\\ListMute')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'ListMute &#124;|'
+
 	
         def onMainChatMsg(self, from_nick, msg):
                 if from_nick not in self.hub.nicks:
@@ -84,7 +87,7 @@ class mute_plugin(plugin.plugin):
                                 self.mutelist['addrs'].pop(adr)
                 return True
 
-        def mute (self, addr, params):
+        def mute (self, addr, params=[]):
                 #params 'nick' 'what' ('time') 'reason'
                 if len(params)>=3:
                         if params[0] in self.hub.nicks:
@@ -99,7 +102,7 @@ class mute_plugin(plugin.plugin):
                                 return self.hub._('No such nick')
                 else:
                         return hub._('Params error')
-        def muteNick (self, addr, params):
+        def muteNick (self, addr, params=[]):
                 # params: 'nick' 'what' ('time') 'reason'
 
                 if len(params)>=3:
@@ -107,7 +110,7 @@ class mute_plugin(plugin.plugin):
                         if what not in ['mc','pm','all']:
                                 return self.hub._('Params error: should be %s') % ('nick what(mc/pm/all) (time) reason)')
                         try:
-                                mutetime=float(params[3])
+                                mutetime=float(params[2])
                         except:
                                 mutetime=None
 
@@ -126,13 +129,13 @@ class mute_plugin(plugin.plugin):
                 else:
                        return self.hub._('Params error: should be %s') % ('ip (time) reason') 
 
-        def muteAddr (self, addr, params):
+        def muteAddr (self, addr, params=[]):
                 if len(params)>=3:
                         what=params[1]
                         if what not in ['mc','pm','all']:
                                 return self.hub._('Params error: should be %s') % ('nick what(mc/pm/all) (time) reason)')
                         try:
-                                mutetime=float(params[3])
+                                mutetime=float(params[2])
                         except:
                                 mutetime=None
 
@@ -150,7 +153,7 @@ class mute_plugin(plugin.plugin):
 
                 else:
                        return self.hub._('Params error: should be %s') % ('ip (time) reason') 
-        def unmute (self, addr, params):
+        def unmute (self, addr, params=[]):
                 #params 'nick'
                 if len(params)>=1:
                         if params[0] in self.hub.nicks:
@@ -165,17 +168,20 @@ class mute_plugin(plugin.plugin):
                                 return self.hub._('No such nick')
                 else:
                         return self.hub._('Params error')
-        def unmuteNick (self, addr, params):
+        def unmuteNick (self, addr, params=[]):
                 i=self.mutelist['nicks'].pop(params[0],None)
                 if i!=None:
                         return self.hub._('Success')
                 else:
                         return self.hub._('Not Found')
 
-        def unmuteAddr (self, addr, params):
+        def unmuteAddr (self, addr, params=[]):
                 i=self.mutelist['addrs'].pop(params[0],None)
                 if i!=None:
                         return self.hub._('Success')
                 else:
                         return self.hub._('Not Found')
+
+        def ListMute(self, addr, params=[]):
+                return self.hub._(' -- Mute List --\n')+unicode(yaml.safe_dump(self.hub.settings['mute'],default_flow_style=False, allow_unicode=True),'utf-8')
 
