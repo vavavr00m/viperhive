@@ -68,13 +68,15 @@ class forbid_plugin(plugin.plugin):
                         if params[1] in ['mc', 'pm', 'all']:
                                 action=' '.join(params[2:])
                                 action=self.hub.unmasksyms(action)
+                                params[0]=self.hub.unmasksyms(params[0])
                                 # -- checking regexp
                                 try:
-                                        re.compile(action)
+                                        re.compile(params[0])
                                 except:
                                         return self.hub._('Error %s' % traceback.format_exc())
 
                                 self.regexps[params[0]]={'source':params[1],'action':action}
+                                self.recompile()
                         else:
                                 return self.hub._('Params error: %s should be %s recived %s') % ('source', 'mc/pm/all', repr(params))
                 else:
@@ -86,11 +88,13 @@ class forbid_plugin(plugin.plugin):
                 # params ['regexp']
                 if len(params)!=1:
                         return self.hub._('Params error')
+                params[0]=self.hub.unmasksyms(params[0])
+                logging.debug('removing regexp %s' % params[0])
                 if params[0] not in self.regexps:
                         return self.hub._('Not found')
                 del self.regexps[params[0]]
 
-                self.recomplile()
+                self.recompile()
                 return 'Success'
 
         def ListForbid(self, addr, params=[]):
@@ -115,13 +119,14 @@ class forbid_plugin(plugin.plugin):
                 if self.hub.nicks[from_nick].level in self.immune:
                         # user immuned
                         return True
-
+                logging.debug('parsing in forbid')
                 for i in self.res:
                         if i.search(message)!=None:
                                 #GOTCHA!
+                                logging.debug('forbid signal')
                                 if self.regexps[i.pattern]['source']==source or self.regexps[i.pattern]['source']=='all':
                                         action=self.regexps[i.pattern]['action']
-                                        
+                                        logging.debug('trigger %s found %s in %s' % (i.pattern,i.search(message).group(0),message))
                                         # -- specical actions!
                                         if action=='ignore':
                                                 return False
