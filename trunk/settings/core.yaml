@@ -11,6 +11,7 @@ autoload:
 - forbid
 - say
 - motd
+- regme
 cmdsymbol: '!'
 hubname: Viperhive powered hub
 loglevel: 20

@@ -24,3 +24,7 @@ op:
 - 'Passwd'
 - 'Help'
 - 'Kick'
+reg:
+- 'Passwd'
+unreg:
+- 'regme'
