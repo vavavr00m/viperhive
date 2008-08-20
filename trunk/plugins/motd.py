@@ -22,6 +22,7 @@ class motd_plugin(plugin.plugin):
                         hub.settings['motd']={'message':'PLEASE SET MOTD MESSAGE (!Set motd message <new message>)'}
 
                 self.usercommands['SetMotd']='$UserCommand 1 2 '+hub._('MOTD\\Set MOTD...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'SetMotd %[line:'+hub._('NEW_MOTD?')+':]&#124;|'
+                self.usercommands['motd']='$UserCommand 1 2 '+hub._('MOTD\\MOTD')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'motd&#124;|'
 
         def onConnected(self,user):
                 self.motd(user.addr)
@@ -37,8 +38,8 @@ class motd_plugin(plugin.plugin):
                 if len(params)<=0:
                         return self.hub._('Params error')
 
-                hub.settings['motd']['message']=' '.join(params)
+                self.hub.settings['motd']['message']=' '.join(params)
                 
-                return self.hub._('Params error')
+                return self.hub._('Success')
 
 
