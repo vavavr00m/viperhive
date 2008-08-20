@@ -57,3 +57,4 @@
 " -- USER %s INFO --\n addres: %s\n level: %s\n is op?: %s\n is protected?: %s": " -- Пользователь %s --\n адрес: %s\n уровень: %s\n оператор?: %s\n защищен?: %s"
 "Users\\User Info": "Пользователи\\Информация о пользователе"
 "User protected!": "Пользователь защищен!"
+"Password incorrect. Provided: %s": "Неверный пароль. Вы послали: %s"

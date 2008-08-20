@@ -128,7 +128,7 @@ class DCHub:
 		defcore_settings['OpLevels']=['owner']
                 defcore_settings['Protected']=['owner', 'op']
                 defcore_settings['Lang']='ru.cp1251'
-                defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd']
+                defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd', 'regme']
                 defcore_settings['loglevel']=10
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
@@ -537,7 +537,8 @@ class DCHub:
 									logging.debug('MyPass %s' % passw)
 								
 									if passw!=self.reglist[nick]['passwd']:
-										logging.debug('wrong pass')
+										logging.info('wrong pass')
+                                                                                newsock.send(('<HUB> %s|' % (self._('Password incorrect. Provided: %s') % str(passw),)).encode(self.charset))
 										newsock.send('$BadPass|')
 										validated=False
 									else:
