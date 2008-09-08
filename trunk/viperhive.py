@@ -69,6 +69,7 @@ class DCHub:
 	# CONSTANTS
 	LOCK='EXTENDEDPROTOCOL_viperhive pk=version0.1-svn'
 	SUPPORTS='NoHello NoGetINFO'
+	WORKER_MAX=100
 	 
 	 
 	def _(self,string):  # Translate function
@@ -158,7 +159,8 @@ class DCHub:
 		self.srvsock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
 		self.srvsock.bind( ("",self.core_settings['port']) )
 		self.srvsock.listen( 5 )
-		self.descriptors = [self.srvsock]
+		#self.descriptors = [[self.srvsock]]
+		self.descriptors=[]
 
 		# User hashes
 		self.nicks={}
@@ -168,7 +170,7 @@ class DCHub:
 		self.hello=[]
 		self.getinfo=[]
 	   
-		self.threads=[]
+		self.clthreads=[]
 
 	   
 		# Reinitialize Logging
@@ -306,19 +308,76 @@ class DCHub:
 	def pinger( self ):
 		logging.info('Pinger started!')
 		while self.work:
-			for nick in self.nicks.iterkeys():
-				self.send_to_nick(nick,"|")
-				time.sleep(120)
+			try:
+				for nick in self.nicks.iterkeys():
+					self.send_to_nick(nick,"|")
+			except:
+				pass
+			time.sleep(120)
 		return True
 							   
 	
+	def clientserv(self, part):
+		''' listen for client sockets in descriptors[part]'''
+		logging.debug('clientserv %s started!' % part)
+		
+		while self.work:
+			if len(self.descriptors[part])>0:
+				(sread, swrite, sexc) = select.select( self.descriptors[part], [], [], 1 )
+			else:
+				time.sleep(1)
+				sread=[]
+			for sock in sread:
+				try:
+					# Received something on a client socket
+					str = unicode(sock.recv(4096), self.charset)
+					# Check to see if the peer socket closed
+					if str == '':
+						host,port = sock.getpeername()
+						addr = '%s:%s' % (host, port)
+						logging.debug ('disconnecting: %s..' % addr)
+						self.emit('onDisconnected',addr)
+						self.drop_user_by_addr(addr)
+					else:
+						# -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
+						i=10
+						while str[-1]!="|" and i>0:
+							str=str+unicode(sock.recv(4096),self.charset)
+							i-=1
+						# --
+
+						host,port = sock.getpeername()
+						addr = '%s:%s' % (host, port)
+						logging.debug ('recived: %s from %s' % (str, addr))
+						if str[-1]=="|":
+							if self.emit('onRecivedSomething',addr):
+								if len(str)>0:
+									msgarr=str.split('|')
+									for i in msgarr:
+										if i=="":
+											pass
+										elif i[0]=="$":
+											self.parse_protocol_cmd(i,addr)
+										else:
+											self.parse_chat_msg(i,addr)
+						else:
+							logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
+			   
+				except:
+					self.drop_user_by_sock(sock)
+					logging.debug('User Lost: %s' % traceback.format_exc()) 
+			
+		
+		print('clientserv %s stopped!' % part)
+		return
 	def run( self ):
 		logging.info ('Hub started!')
 		try:
 			self.work=True
-			thread.start_new_thread(self.pinger,())
+			#self.pinger_pid=threading.Thread(None,self.pinger,())
+			#self.pinger_pid.start()
 			while self.work:
-				(sread, swrite, sexc) = select.select( self.descriptors, [], [], 1 )
+				(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
 				#logging.debug(len(self.descriptors))
 
 				#logging.debug(repr(self.nicks))
@@ -326,57 +385,16 @@ class DCHub:
 				#logging.debug(repr(self.descriptors))
 				#logging.debug(repr(self.hello))
 
-				for thr in self.threads[:]:
-					if not thr.isAlive():
-						self.threads.remove(thr)
+				#for thr in self.threads[:]:
+				#	if not thr.isAlive():
+				#		self.threads.remove(thr)
 				# Iterate through the tagged read descriptors
 				for sock in sread:
 					# Received a connect to the server (listening) socket
-					if sock == self.srvsock:
 						# self.accept_new_connection()
 						# Start new thread to avoid hub lock when user connecting
 						thread.start_new_thread(self.accept_new_connection,())
 						#self.accept_new_connection()
-					else:
-						try:
-							# Received something on a client socket
-							str = unicode(sock.recv(4096), self.charset)
-							# Check to see if the peer socket closed
-							if str == '':
-								host,port = sock.getpeername()
-								addr = '%s:%s' % (host, port)
-								logging.debug ('disconnecting: %s..' % addr)
-								self.emit('onDisconnected',addr)
-								self.drop_user_by_addr(addr)
-							else:
-								# -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
-								i=10
-								while str[-1]!="|" and i>0:
-									str=str+unicode(sock.recv(4096),self.charset)
-									i-=1
-								# --
-
-								host,port = sock.getpeername()
-								addr = '%s:%s' % (host, port)
-								logging.debug ('recived: %s from %s' % (str, addr))
-								if str[-1]=="|":
-									if self.emit('onRecivedSomething',addr):
-										if len(str)>0:
-											msgarr=str.split('|')
-											for i in msgarr:
-												if i=="":
-													pass
-												elif i[0]=="$":
-													self.parse_protocol_cmd(i,addr)
-												else:
-													self.parse_chat_msg(i,addr)
-								else:
-									logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
-					   
-						except:
-							self.drop_user_by_sock(sock)
-							logging.debug('User Lost: %s' % traceback.format_exc()) 
-
 		finally:
 			# Save settings before exiting
 			self.on_exit()
@@ -595,8 +613,21 @@ class DCHub:
 								try:
 									if self.emit('onConnected',user):
 										logging.debug('Validated. Appending.')
-										self.descriptors.append( newsock )
+										
+										free=None # No free workers
+										for i, val in enumerate(self.descriptors): # Search for  free worker
+											if len(val)<self.WORKER_MAX:
+												val.append(newsock)
+												free=i
+												break
 
+										if free==None:
+											#adding worker
+											logging.info('Many users. Appending worker')
+											self.descriptors.append([newsock])
+											self.clthreads.append(threading.Thread(None,self.clientserv,None,(len(self.descriptors)-1,)))
+											self.clthreads[(len(self.descriptors)-1)].start()
+												
 										
 										if nick in self.oplevels:
 											self.send_to_all(self.get_op_list())
@@ -633,7 +664,7 @@ class DCHub:
 					newsock.close()
 			return
 		except:
-			logging.error('Unexpected error: %s' % traceback.format_exc())
+			logging.debug('Unexpected error: %s' % traceback.format_exc())
 
 
 
@@ -646,13 +677,14 @@ class DCHub:
 	def drop_user(self,addr,nick,sock):
 		logging.debug('dropping %s %s %s' % (addr, nick, sock))
 		try:
-			if sock in self.descriptors: self.descriptors.remove(sock)
+			for i in self.descriptors:
+				if sock in i: i.remove(sock)
 			self.addrs.pop(addr,'')
 			self.nicks.pop(nick,'')
 			if sock in self.hello: self.hello.remove(sock)
 			sock.close()
 		except:
-				logging.error('something wrong while dropping client %s' % traceback.format_exc())
+				logging.debug('something wrong while dropping client %s' % traceback.format_exc())
 		logging.debug ('Quit %s' % nick)
 		self.send_to_all('$Quit %s|' % nick)
 		self.emit('onUserLeft',addr,nick)
@@ -682,12 +714,13 @@ class DCHub:
 		logging.debug('sending to all %s' % msg)
 		if not (len(msg)>0 and msg[-1]=="|"):
 			msg=msg+"|"
-		for sock in self.descriptors:
-			if sock!=self.srvsock and sock!=omitSock:
-				try:
-					sock.send(msg.encode(self.charset))
-				except:
-					logging.error('socket error %s' % traceback.format_exc())
+		for part in self.descriptors:
+			for sock in part:
+				if sock!=self.srvsock and sock!=omitSock:
+					try:
+						sock.send(msg.encode(self.charset))
+					except:
+						logging.debug('socket error %s' % traceback.format_exc())
 
 	def send_to_nick(self,nick,msg):
 		if nick in self.nicks:
@@ -698,7 +731,7 @@ class DCHub:
 				self.nicks[nick].descr.send(msg.encode(self.charset))
 			except:
 				self.drop_user_by_nick(nick)
-				logging.error('socket error %s. user lost!' % traceback.format_exc() )
+				logging.debug('socket error %s. user lost!' % traceback.format_exc() )
 		else:
 			logging.warning('send to unknown nick: %s' % nick)
 
@@ -709,7 +742,7 @@ class DCHub:
 			try:
 				self.addrs[addr].descr.send(msg.encode(self.charset))
 			except:
-				logging.error('socket error %s' % traceback.format_exc())
+				logging.debug('socket error %s' % traceback.format_exc())
 		else:
 			logging.warning('uknown addres: %s' % addr)
 
