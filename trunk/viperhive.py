@@ -655,13 +655,17 @@ class DCHub:
 									logging.debug('error while connect: %s' % traceback.format_exc())
 									self.drop_user(addr, nick, newsock)
 						else:
+							logging.debug('no MyINFO recived')
 							newsock.close()
 					else:
+						logging.debug('not validated nick. dropping.')
 						newsock.close()
 				else:
 					logging.debug('timeout: %s' % addr)
 					newsock.send('login timeout')
 					newsock.close()
+			else:
+				logging.debug('Connectin not allowed by plugins')
 			return
 		except:
 			logging.debug('Unexpected error: %s' % traceback.format_exc())
