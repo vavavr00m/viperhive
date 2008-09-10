@@ -480,9 +480,9 @@ class DCHub:
 						result=self.commands[acmd[0]](addr,acmd[1:])
 					else:
 						result=self.commands[acmd[0]](addr)
-						if result!='':
-							self.send_to_addr(addr,self._('<HUB> %s|') % result)
-
+					if result!='':
+						self.send_to_addr(addr,self._('<HUB> %s|') % result)
+						
 				except SystemExit:
 					raise SystemExit
 
@@ -959,7 +959,7 @@ class DCHub:
 			for cmd in self.commands.iterkeys():
 				if self.check_rights(self.addrs[addr],cmd):
 					ans+='%s\n' % self.help.get(cmd,cmd)
-					return ans
+			return ans
 		else:
 			return self._('Params error')
 
@@ -982,35 +982,29 @@ class DCHub:
 		if len(params)==1:
 			logging.debug('loading plugin %s' % params[0])
 			if params[0] not in self.plugs:
-			   try:
+				try:
 					if 'plugins.'+params[0] not in sys.modules:
-					   plugins=__import__('plugins.'+params[0])
-					   plugin=getattr(plugins,params[0])
+						plugins=__import__('plugins.'+params[0])
+						plugin=getattr(plugins,params[0])
 					else:
-					   plugin=reload(sys.modules['plugins.'+params[0]])
-
-
+						plugin=reload(sys.modules['plugins.'+params[0]])	
+					logging.debug('loaded plugin file success')
 					cls=getattr(plugin,params[0]+'_plugin')
 					obj=cls(self)
-
 					self.plugs[params[0]]=obj
 					self.commands.update(obj.commands)
 					self.usercommands.update(obj.usercommands)
-
 					for key,value in obj.slots.iteritems():
 					   if key in self.slots:
 						   self.slots[key].append(value)
 					   else:
 						   self.slots[key]=[value]
-
-
 					self.send_usercommands_to_all()
-
-
-
 					return self._('Success')
-			   except:
-				   return self._('Plugin load error: %s' % (traceback.format_exc()))
+				except:
+					e=traceback.format_exc()
+					logging.debug('Plugin load error: %s')
+					return self._('Plugin load error: %s' % (e))
 			else:
 				return self._('Plugin already loaded')
 		else:
@@ -1023,18 +1017,14 @@ class DCHub:
 				try:
 					if params[0] in self.plugs:
 						plug=self.plugs.pop(params[0])
-
 						for key in plug.commands.iterkeys():
 							self.commands.pop(key,None)
-
 						for key in plug.usercommands.iterkeys():
 							self.usercommands.pop(key,None)
-
 						for key, value in plug.slots.iteritems():
 							if key in self.slots:
 								if value in self.slots[key]:
 									self.slots[key].remove(value)
-
 						self.send_usercommands_to_all()
 						return self._('Success')
 					else:
