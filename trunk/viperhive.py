@@ -67,7 +67,7 @@ class DCUser:
 
 class DCHub:
 	# CONSTANTS
-	LOCK='EXTENDEDPROTOCOL_viperhive pk=version0.1-svn'
+	LOCK='EXTENDEDPROTOCOL_viperhive Pk=version0.1-svn'
 	SUPPORTS='NoHello NoGetINFO'
 	WORKER_MAX=100
 	 
