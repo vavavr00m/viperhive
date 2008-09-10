@@ -69,7 +69,7 @@ class DCHub:
 	# CONSTANTS
 	LOCK='EXTENDEDPROTOCOL_viperhive Pk=version0.1-svn'
 	SUPPORTS='NoHello NoGetINFO'
-	WORKER_MAX=100
+	WORKER_MAX=300
 	 
 	 
 	def _(self,string):  # Translate function
