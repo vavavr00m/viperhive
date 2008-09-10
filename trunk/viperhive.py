@@ -538,6 +538,14 @@ class DCHub:
 
 					nick=self.recp['ValidateNick'].search(s)
 					#checking nick
+					# if nick == None => something like microdc2
+					if nick==None:
+						logging.debug('Bastard microdc2!!')
+						(sock, sw, sx)=select.select([newsock],[],[],15)
+						if sock!=[]:
+							s+=unicode(newsock.recv(4096),self.charset)
+					
+					#checking nick
 					if nick!=None:
 						nick=nick.group(0)
 						logging.debug('validating: %s' % nick)
