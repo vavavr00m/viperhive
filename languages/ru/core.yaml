@@ -58,3 +58,5 @@
 "Users\\User Info": "Пользователи\\Информация о пользователе"
 "User protected!": "Пользователь защищен!"
 "Password incorrect. Provided: %s": "Неверный пароль. Вы послали: %s"
+"Set hub topic": "Установить топик хаба"
+"HubTopic": "ТопикХаба"
