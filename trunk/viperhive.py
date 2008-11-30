@@ -122,6 +122,7 @@ class DCHub:
 		defcore_settings={}
 		defcore_settings['port']=1411
 		defcore_settings['hubname']='Viperhive powered hub'
+		defcore_settings['topic']='Viperhive powered hub'
 		defcore_settings['cmdsymbol']='!'
 		defcore_settings['OpLevels']=['owner']
 		defcore_settings['Protected']=['owner', 'op']
@@ -199,6 +200,7 @@ class DCHub:
 		self.commands['PasswdTo']=self.PasswdTo #Usercommands +
 		self.commands['Kick']=self.Kick #Usercommands +
 		self.commands['UI']=self.UI
+		self.commands['SetTopic']=self.SetTopic
 
 
 		# TRANSLATION SYSTEM
@@ -254,6 +256,7 @@ class DCHub:
 
 		self.usercommands['Quit']='$UserCommand 1 2 '+self._('Core\\Quit')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Quit&#124;|'
 		self.usercommands['Save']='$UserCommand 1 2 '+self._('Core\\Save settings')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Save&#124;|'
+		self.usercommands['SetTopic']='$UserCommand 1 2 '+self._('Set hub topic')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetTopic %[line:'+self._('NewTopic')+']&#124;|'
 
 		self.usercommands['Help']='$UserCommand 1 2 '+self._('Help')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Help&#124;|'
 
@@ -654,6 +657,7 @@ class DCHub:
 										
 
 										self.send_usercommands_to_nick(nick)
+										self.send_to_nick(nick, '$HubTopic %s|' % self.core_settings['topic'])
 										#logging.debug (repr(self.nicks))
 										#logging.debug (repr(self.addrs))
 									else:
@@ -1082,7 +1086,15 @@ class DCHub:
 		else:
 				return self._('Params error')
 
-
+	def SetTopic(self,addr,params=[]):
+		#params: ['topic']
+		if len(params)>=1:
+			topic=' '.join(params)
+			self.core_settings['topic']=topic
+			self.send_to_all('$HubTopic %s|' % topic)
+			return self._('Success')
+		else:
+			return self._('Params error')
 
 
 
