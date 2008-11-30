@@ -637,7 +637,7 @@ class DCHub:
 											self.clthreads[(len(self.descriptors)-1)].start()
 												
 										
-										if nick in self.oplevels:
+										if user.level in self.oplevels:
 											self.send_to_all(self.get_op_list())
 
 										if not 'NoHello' in clisup:
