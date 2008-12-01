@@ -12,6 +12,13 @@ import yaml
 import logging
 import traceback
 
+trace=None
+if 'format_exc' in dir(traceback):
+        from traceback import format_exc as trace
+else:
+        from traceback import print_exc as trace
+
+
 # --- !! Class name SHOULD BE FileName_plugin
 class forbid_plugin(plugin.plugin):
         
@@ -73,7 +80,7 @@ class forbid_plugin(plugin.plugin):
                                 try:
                                         re.compile(params[0])
                                 except:
-                                        return self.hub._('Error %s' % traceback.format_exc())
+                                        return self.hub._('Error %s' % trace())
 
                                 self.regexps[params[0]]={'source':params[1],'action':action}
                                 self.recompile()
@@ -148,7 +155,7 @@ class forbid_plugin(plugin.plugin):
                                                                 if from_nick in self.hub.nicks:
                                                                         self.hub.send_to_addr(self.hub.nicks[from_nick].addr,self.hub._('<HUB> %s|') % result)
                                                 except:
-                                                        logging.error('error in forbid module: %s' % traceback.format_exc())
+                                                        logging.error('error in forbid module: %s' % trace())
 
                                         return False
                                 else:

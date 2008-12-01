@@ -20,6 +20,13 @@ logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
 #logging.getLogger().addHandler()
 
+trace=None
+if 'format_exc' in dir(traceback):
+        from traceback import format_exc as trace
+else:
+        from traceback import print_exc as trace
+
+
 reload(sys)
 
 def lock2key (lock):
@@ -230,7 +237,7 @@ class DCHub:
 
 						self.lang.update(arr)
 					except:
-						logging.error('file %s in wrong format: %s' % ((lpath+i), traceback.format_exc()))
+						logging.error('file %s in wrong format: %s' % ((lpath+i), trace()))
 			if 'help' in lfiles:                                
 			   # LOAD HELP FOR CURRENT LANGUAGE
 			   hpath=lpath+'help/'
@@ -245,9 +252,9 @@ class DCHub:
 
 							self.help.update(arr)
 						except:
-							logging.error('file %s in wrong format: %s' % ((lpath+i), traceback.format_exc()))
+							logging.error('file %s in wrong format: %s' % ((lpath+i), trace()))
 		except:
-			logging.error('language directory not found %s' % (traceback.format_exc()))
+			logging.error('language directory not found %s' % (trace()))
 
 	   
 		logging.info('Language loaded: %s strings' % str(len(self.lang)))
@@ -308,7 +315,7 @@ class DCHub:
 				if not slot(*args):
 					return False
 			except:
-				logging.error('PLUGIN ERROR: %s' % traceback.format_exc())
+				logging.error('PLUGIN ERROR: %s' % trace())
 		return True
 
 	def pinger( self ):
@@ -376,7 +383,7 @@ class DCHub:
 			   
 				except:
 					self.drop_user_by_sock(sock)
-					logging.debug('User Lost: %s' % traceback.format_exc()) 
+					logging.debug('User Lost: %s' % trace()) 
 			
 		
 		print('clientserv %s stopped!' % part)
@@ -400,7 +407,7 @@ class DCHub:
 						thread.start_new_thread(self.accept_new_connection,())
 						#self.accept_new_connection()
 			except:
-				logging.error(traceback.format_exc())
+				logging.error(trace())
 		finally:
 			# Save settings before exiting
 			self.on_exit()
@@ -493,7 +500,7 @@ class DCHub:
 					raise SystemExit
 
 				except:
-					self.send_to_addr(addr,self._('<HUB> Error while proccessing command %s|') % traceback.format_exc())
+					self.send_to_addr(addr,self._('<HUB> Error while proccessing command %s|') % trace())
 			else:
 				self.send_to_addr(addr,self._('<HUB> No such command'))
 		else:
@@ -667,7 +674,7 @@ class DCHub:
 										logging.debug('not validated. dropping')
 										self.drop_user(addr, nick, newsock)
 								except:
-									logging.debug('error while connect: %s' % traceback.format_exc())
+									logging.debug('error while connect: %s' % trace())
 									self.drop_user(addr, nick, newsock)
 						else:
 							logging.debug('no MyINFO recived')
@@ -683,7 +690,7 @@ class DCHub:
 				logging.debug('Connectin not allowed by plugins')
 			return
 		except:
-			logging.debug('Unexpected error: %s' % traceback.format_exc())
+			logging.debug('Unexpected error: %s' % trace())
 
 
 
@@ -703,7 +710,7 @@ class DCHub:
 			if sock in self.hello: self.hello.remove(sock)
 			sock.close()
 		except:
-				logging.debug('something wrong while dropping client %s' % traceback.format_exc())
+				logging.debug('something wrong while dropping client %s' % trace())
 		logging.debug ('Quit %s' % nick)
 		self.send_to_all('$Quit %s|' % nick)
 		self.emit('onUserLeft',addr,nick)
@@ -739,7 +746,7 @@ class DCHub:
 					try:
 						sock.send(msg.encode(self.charset))
 					except:
-						logging.debug('socket error %s' % traceback.format_exc())
+						logging.debug('socket error %s' % trace())
 
 	def send_to_nick(self,nick,msg):
 		if nick in self.nicks:
@@ -750,7 +757,7 @@ class DCHub:
 				self.nicks[nick].descr.send(msg.encode(self.charset))
 			except:
 				self.drop_user_by_nick(nick)
-				logging.debug('socket error %s. user lost!' % traceback.format_exc() )
+				logging.debug('socket error %s. user lost!' % trace() )
 		else:
 			logging.warning('send to unknown nick: %s' % nick)
 
@@ -761,7 +768,7 @@ class DCHub:
 			try:
 				self.addrs[addr].descr.send(msg.encode(self.charset))
 			except:
-				logging.debug('socket error %s' % traceback.format_exc())
+				logging.debug('socket error %s' % trace())
 		else:
 			logging.warning('uknown addres: %s' % addr)
 
@@ -791,7 +798,7 @@ class DCHub:
 					f.write(yaml.safe_dump(sett,default_flow_style=False,allow_unicode=True))
 				except:
 					logging.error('fail to load settings for module %s. cause:' % mod)
-					logging.error('%s' %  traceback.format_exc())
+					logging.error('%s' %  trace())
 					return False
 
 		except:
@@ -815,9 +822,9 @@ class DCHub:
 								self.settings[mod]=dct
 					except:
 						logging.error('fail to load settings for module %s. cause:' % mod)
-						logging.error('%s' %  traceback.format_exc())
+						logging.error('%s' %  trace())
 		except:
-			logging.error('error while loading settings: %s', traceback.format_exc())
+			logging.error('error while loading settings: %s', trace())
 				
 
 	def check_rights(self, user, command):
@@ -865,7 +872,7 @@ class DCHub:
 			self.settings[params[0]][params[1]]=value
 			return self._('Settings for %s - %s setted for %s') % (params[0], params[1], value)
 		except:
-			return self._('Error: %s') % traceback.format_exc()
+			return self._('Error: %s') % trace()
 	
 	def Get(self,addr, params=[]): #Getting params or list
 		# Params can be 'core/plugin name' 'parameter' or 'core/plugin name'
@@ -988,7 +995,7 @@ class DCHub:
 					ans+="%s\n" % mod
 			return ans
 		except:
-			logging.error('error while listing plugins: %s', traceback.format_exc())
+			logging.error('error while listing plugins: %s', trace())
 
 	def LoadPlugin(self,addr,params=[]):
 		# Params should be: 'plugin'
@@ -1015,7 +1022,7 @@ class DCHub:
 					self.send_usercommands_to_all()
 					return self._('Success')
 				except:
-					e=traceback.format_exc()
+					e=trace()
 					logging.debug('Plugin load error: %s')
 					return self._('Plugin load error: %s' % (e))
 			else:
@@ -1043,7 +1050,7 @@ class DCHub:
 					else:
 						return self._('Plugin not loaded')
 				except:
-					return self._('Plugin unload error: %s' % traceback.format_exc())
+					return self._('Plugin unload error: %s' % trace())
 			else:
 				return self._('Params error')
 
