@@ -1,3 +1,4 @@
+#summary Ядро (Core) - основной модуль хаба
 #labels Featured,Phase-Deploy
 =Ядро (Core) - основной модуль хаба=
 
