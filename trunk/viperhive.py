@@ -553,10 +553,13 @@ class DCHub:
 					#checking nick
 					# if nick == None => something like microdc2
 					if nick==None:
-						logging.debug('Bastard microdc2!!')
+						logging.debug('Old client: %s' %s)
+						newsock.send('$Supports %s|' % self.SUPPORTS)
 						(sock, sw, sx)=select.select([newsock],[],[],15)
 						if sock!=[]:
 							s+=unicode(newsock.recv(4096),self.charset)
+							nick=self.recp['ValidateNick'].search(s)
+						logging.debug('Old client full: %s' %s)
 					
 					#checking nick
 					if nick!=None:
@@ -608,9 +611,9 @@ class DCHub:
 					if validated:
 						logging.debug ('validated %s' % nick)
 						newsock.send('$Hello %s|' %  nick.encode(self.charset))
-						#newsock.send('$Supports %s|' % self.SUPPORTS)
-						for i in self.hello:
-							i.send('$Hello %s|' %  nick)
+						newsock.send('$Supports %s|' % self.SUPPORTS)
+						#for i in self.hello:
+						#	i.send('$Hello %s|' %  nick)
 						if not 'MyINFO' in s:
 							(sock, sw, sx)=select.select([newsock],[],[],15)
 							if sock!=[]:
