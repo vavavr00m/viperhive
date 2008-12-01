@@ -920,7 +920,11 @@ class DCHub:
 			return self._('Params error')
 
 	def ListReg(self,addr):
-		return self._('--- REGISTRED USERES --- \n') + "\n".join('nick: %s level: %s' % (nick, param['level'],) for nick, param in self.reglist.iteritems())
+		s=self._('--- REGISTRED USERES --- \n')
+		for nick, param in self.reglist.iteritems():
+			s=s+('nick: %s level: %s' % (nick, param['level'],))+'\n'
+		return s
+		#return self._('--- REGISTRED USERES --- \n') + "\n".join('nick: %s level: %s' % (nick, param['level'],) for nick, param in self.reglist.iteritems())
 
 
 	def SetLevel(self,addr,params=[]):
