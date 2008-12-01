@@ -16,7 +16,9 @@ import traceback
 import codecs
 import time
 
-logging.basicConfig(level=logging.DEBUG,stream=sys.stdout)
+logging.basicConfig()
+logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().addHandler()
 
 reload(sys)
 
@@ -178,7 +180,7 @@ class DCHub:
 		# Reinitialize Logging
 		logging.debug('Set logging level to %s' % str(self.settings['core']['loglevel']))
 		reload(sys.modules['logging'])
-		logging.basicConfig(level=self.settings['core']['loglevel'])
+		logging.getLogger().setLevel(self.settings['core']['loglevel'])
 	   
 
 		# REGISTERING CORE COMMANDS
