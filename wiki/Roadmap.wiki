@@ -1,8 +1,7 @@
 #roadmap of viperhive project
 
- * usercommands support
- * ban plugin
- * antimat/antispam plugin
- * log plugin
-
- * _beta testings_
+ * UserIP http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP
+ * UserIP2 http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP
+ * MassMessage plugin
+ * AntiFlood Plugin
+ * IPLog Plugin
