@@ -1,30 +1,30 @@
+op:
+- mute
+- muteNick
+- muteAddr
+- UnBanAddr
+- ListReg
+- ListBans
+- ListMute
+- UI
+- BanAddr
+- PasswdTo
+- ListForbid
+- ListPlugins
+- unmute
+- unmuteNick
+- unmuteAddr
+- Ban
+- BanNick
+- say
+- ActivePlugins
+- SetMotd
+- Passwd
+- Help
+- Kick
 owner:
 - '*'
-op:
-- 'mute'
-- 'muteNick'
-- 'muteAddr'
-- 'UnBanAddr'
-- 'ListReg'
-- 'ListBans'
-- 'ListMute'
-- 'UI'
-- 'BanAddr'
-- 'PasswdTo'
-- 'ListForbid'
-- 'ListPlugins'
-- 'unmute'
-- 'unmuteNick'
-- 'unmuteAddr'
-- 'Ban'
-- 'BanNick'
-- 'say'
-- 'ActivePlugins'
-- 'SetMotd'
-- 'Passwd'
-- 'Help'
-- 'Kick'
 reg:
-- 'Passwd'
+- Passwd
 unreg:
-- 'regme'
+- regme
