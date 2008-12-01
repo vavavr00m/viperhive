@@ -6,3 +6,4 @@
  * AntiFlood Plugin
  * IPLog Plugin
  * Add RangeBan support for ban plugin
+ * $HubINFO support
