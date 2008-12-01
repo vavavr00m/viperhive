@@ -129,6 +129,7 @@ class DCHub:
 		defcore_settings['Lang']='ru.cp1251'
 		defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd', 'regme']
 		defcore_settings['loglevel']=10
+		defcore_settings['autosave']=120
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
@@ -309,17 +310,22 @@ class DCHub:
 		return True
 
 	def pinger( self ):
-		logging.info('Pinger started!')
-		while self.work:
-			try:
-				for nick in self.nicks.iterkeys():
-					self.send_to_nick(nick,"|")
-			except:
-				pass
-			time.sleep(120)
+		logging.debug('pinging')
+		try:
+			for nick in self.nicks.iterkeys():
+				self.send_to_nick(nick,"|")
+		except:
+			pass
+		self.pinger_timer.start()
 		return True
 							   
-	
+	def settings_autosaver( self ):
+		logging.debug('settings autosave')
+		self.save_settings()
+		self.autosave_timer.start()
+		return True
+
+
 	def clientserv(self, part):
 		''' listen for client sockets in descriptors[part]'''
 		logging.debug('clientserv %s started!' % part)
@@ -376,28 +382,23 @@ class DCHub:
 	def run( self ):
 		logging.info ('Hub started!')
 		try:
-			self.work=True
-			#self.pinger_pid=threading.Thread(None,self.pinger,())
-			#self.pinger_pid.start()
-			while self.work:
-				(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
-				#logging.debug(len(self.descriptors))
+			try:
+				self.work=True
+				self.pinger_timer=threading.Timer(120,self.pinger)
+				self.pinger_timer.start()
+				if self.settings['core']['autosave']!=None:
+					self.autosave_timer=threading.Timer(self.settings['core']['autosave'],self.settings_autosaver)
+					self.autosave_timer.start()
 
-				#logging.debug(repr(self.nicks))
-				#logging.debug(repr(self.addrs))
-				#logging.debug(repr(self.descriptors))
-				#logging.debug(repr(self.hello))
+				while self.work:
+					(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
 
-				#for thr in self.threads[:]:
-				#	if not thr.isAlive():
-				#		self.threads.remove(thr)
-				# Iterate through the tagged read descriptors
-				for sock in sread:
-					# Received a connect to the server (listening) socket
-						# self.accept_new_connection()
+					for sock in sread:
 						# Start new thread to avoid hub lock when user connecting
 						thread.start_new_thread(self.accept_new_connection,())
 						#self.accept_new_connection()
+			except:
+				logging.error(traceback.format_exc())
 		finally:
 			# Save settings before exiting
 			self.on_exit()
@@ -838,6 +839,8 @@ class DCHub:
 
 
 	def on_exit(self):
+		self.pinger_timer.cancel()
+		self.autosave_timer.cancel()
 		self.save_settings()
 
 
