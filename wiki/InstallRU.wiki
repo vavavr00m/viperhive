@@ -1,3 +1,4 @@
+#summary Установка и запуск ViperHive
 #labels Featured
 = Установка и запуск ViperHive =
 
