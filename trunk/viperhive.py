@@ -318,20 +318,24 @@ class DCHub:
 				logging.error('PLUGIN ERROR: %s' % trace())
 		return True
 
-	def pinger( self ):
-		logging.debug('pinging')
-		try:
-			for nick in self.nicks.iterkeys():
-				self.send_to_nick(nick,"|")
-		except:
-			pass
-		self.pinger_timer.start()
+	def pinger( self, atime ):
+
+
+		while self.work:
+			time.sleep(atime)
+			logging.debug('pinging')
+			try:
+				for nick in self.nicks.iterkeys():
+					self.send_to_nick(nick,"|")
+			except:
+				pass
 		return True
 							   
-	def settings_autosaver( self ):
-		logging.debug('settings autosave')
-		self.save_settings()
-		self.autosave_timer.start()
+	def settings_autosaver( self, atime ):
+		while self.work:
+			time.sleep(atime)
+			logging.debug('settings autosave')
+			self.save_settings()
 		return True
 
 
@@ -393,11 +397,8 @@ class DCHub:
 		try:
 			try:
 				self.work=True
-				self.pinger_timer=threading.Timer(120,self.pinger)
-				self.pinger_timer.start()
-				if self.settings['core']['autosave']!=None:
-					self.autosave_timer=threading.Timer(self.settings['core']['autosave'],self.settings_autosaver)
-					self.autosave_timer.start()
+				thread.start_new_thread(self.pinger,(120,))
+				thread.start_new_thread(self.settings_autosaver,(self.settings['core']['autosave'],))
 
 				while self.work:
 					(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
@@ -614,10 +615,13 @@ class DCHub:
 						newsock.send('$Supports %s|' % self.SUPPORTS)
 						#for i in self.hello:
 						#	i.send('$Hello %s|' %  nick)
-						if not 'MyINFO' in s:
+						k=3
+						while (not 'MyINFO' in s) or(k>0):
 							(sock, sw, sx)=select.select([newsock],[],[],15)
 							if sock!=[]:
 								s+=unicode(newsock.recv(4096),self.charset)
+							k=k-1
+
 						info=self.recp['MyINFO'].search(s)
 						if info!=None:
 							tr=True
@@ -680,7 +684,7 @@ class DCHub:
 									logging.debug('error while connect: %s' % trace())
 									self.drop_user(addr, nick, newsock)
 						else:
-							logging.debug('no MyINFO recived')
+							logging.debug('no MyINFO recived\n recived: %s' % s)
 							newsock.close()
 					else:
 						logging.debug('not validated nick. dropping.')
@@ -851,9 +855,9 @@ class DCHub:
 
 
 	def on_exit(self):
-		self.pinger_timer.cancel()
-		self.autosave_timer.cancel()
+		self.work=False
 		self.save_settings()
+		sys.exit()
 
 
 	# COMMANDS
