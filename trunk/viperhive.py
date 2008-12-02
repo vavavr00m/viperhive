@@ -95,11 +95,11 @@ class DCHub:
 
 		# COMPILE REGEXPS
 		self.recp={}
-		self.recp['Key']=re.compile('(?<=\$Key ).*(?=[|])')
-		self.recp['ValidateNick']=re.compile('(?<=\$ValidateNick ).*(?=[|])')
-		self.recp['Supports']=re.compile('(?<=\$Supports ).*(?=[|])')
-		self.recp['MyPass']=re.compile('(?<=\$MyPass ).*(?=[|])')
-		self.recp['MyINFO']=re.compile('\$MyINFO .*(?=[|])')
+		self.recp['Key']=re.compile('(?<=\$Key )[^|]*(?=[|])')
+		self.recp['ValidateNick']=re.compile('(?<=\$ValidateNick )[^|]*(?=[|])')
+		self.recp['Supports']=re.compile('(?<=\$Supports )[^|]*(?=[|])')
+		self.recp['MyPass']=re.compile('(?<=\$MyPass )[^|]*(?=[|])')
+		self.recp['MyINFO']=re.compile('\$MyINFO [^|]*(?=[|])')
 
 		self.recp['NoGetINFO']=re.compile('NoGetINFO')
 		self.recp['NoHello']=re.compile('NoHello')
@@ -616,7 +616,7 @@ class DCHub:
 						#for i in self.hello:
 						#	i.send('$Hello %s|' %  nick)
 						k=3
-						while (not 'MyINFO' in s) or(k>0):
+						while (not 'MyINFO' in s) and (k>0):
 							(sock, sw, sx)=select.select([newsock],[],[],15)
 							if sock!=[]:
 								s+=unicode(newsock.recv(4096),self.charset)
@@ -665,6 +665,7 @@ class DCHub:
 										
 										if not 'NoGetINFO' in s:
 											newsock.send(self.get_nick_list())
+											newsock.send(self.get_op_list().encode(self.charset))
 										else:
 											for i in self.nicks.itervalues():
 												newsock.send(i.MyINFO.encode(self.charset)+"|")
@@ -794,7 +795,8 @@ class DCHub:
 		for user in self.nicks.itervalues():
 			if user.level in self.oplevels:
 				oplist+=user.nick+"$$"
-		return "%s|" % (oplist[:-2],)
+		#return "%s|" % (oplist[:-2],)
+		return oplist+'|'
 	def save_settings(self):
 		logging.debug('saving settigs')
 		try:
