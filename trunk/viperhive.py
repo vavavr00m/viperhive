@@ -72,12 +72,13 @@ class DCUser:
 		self.connection=ar[4][0:-1]
 		self.flag=ar[4][-1]
 		self.mail=ar[5]
-
+	def get_ip(self):
+		return self.addr.split(':')[0]
 
 class DCHub:
 	# CONSTANTS
-	LOCK='EXTENDEDPROTOCOL_viperhive Pk=version0.1-svn'
-	SUPPORTS='NoHello NoGetINFO'
+	LOCK='EXTENDEDPROTOCOL_viperhive Pk=version0.4-svn'
+	SUPPORTS='NoHello NoGetINFO UserIP UserIP2'
 	WORKER_MAX=300
 	 
 	 
@@ -139,6 +140,7 @@ class DCHub:
 		defcore_settings['autoload']=['ban', 'mute', 'forbid', 'say', 'motd', 'regme']
 		defcore_settings['loglevel']=10
 		defcore_settings['autosave']=120
+		defcore_settings['userip']=['owner', 'op']
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
@@ -530,7 +532,7 @@ class DCHub:
 			addr='%s:%s' % (host, port)
 			logging.debug ('connecting: %s' % addr)
 			if self.emit('onConnecting', addr):
-				newsock.send('$Lock %s|$HubName %s|' % ( self.LOCK , self.core_settings['hubname'].encode(self.charset) ) )
+				newsock.send('$Lock %s|$HubName %s|<HUB> Hub is powered by ViperHive [http://dc.hovel.ru]|' % ( self.LOCK , self.core_settings['hubname'].encode(self.charset) ) )
 				(sock, sw, sx)=select.select([newsock],[],[],15)
 				
 				logging.debug(repr(sock))
@@ -538,17 +540,21 @@ class DCHub:
 				if sock!=[]:
 					s=unicode(newsock.recv(4096),self.charset)
 					supports=self.recp['Supports'].search(s)
-					clisup=[]	
-					validated=True
-
 					if supports!=None:
-						#Normal clients should support this
 						supports=supports.group(0)
-						logging.debug('client supports: %s' % supports)
-						if self.recp['NoGetINFO'].search(supports)!=None:
-							clisup.append('NoGetINFO')
-						if self.recp['NoHello'].search(supports)!=None:
-							clisup.append('NoHello')
+					else:
+						supports=''
+					#clisup=[]	
+					validated=True
+					logging.debug('Supports: %s' % supports)
+					#if supports!=None:
+					#	#Normal clients should support this
+					#	supports=supports.group(0)
+					#	logging.debug('client supports: %s' % supports)
+					#	if self.recp['NoGetINFO'].search(supports)!=None:
+					#		clisup.append('NoGetINFO')
+					#	if self.recp['NoHello'].search(supports)!=None:
+					#		clisup.append('NoHello')
 
 					nick=self.recp['ValidateNick'].search(s)
 					#checking nick
@@ -660,10 +666,10 @@ class DCHub:
 										if user.level in self.oplevels:
 											self.send_to_all(self.get_op_list())
 
-										if not 'NoHello' in clisup:
+										if not 'NoHello' in supports:
 											self.hello.append(newsock)
 										
-										if not 'NoGetINFO' in s:
+										if not 'NoGetINFO' in supports:
 											newsock.send(self.get_nick_list())
 											newsock.send(self.get_op_list().encode(self.charset))
 										else:
@@ -672,10 +678,20 @@ class DCHub:
 												newsock.send(self.get_op_list().encode(self.charset))
 										self.send_to_all(info+"|")
 										
+										uips=self.get_userip_acc_list()
+
+										if ('UserIP' in supports) or ('UserIP2' in supports):
+											self.send_to_nick(nick, '$UserIP %s %s$$|' %(nick, user.get_ip()))
+											if user.level in self.core_settings['userip']:
+												self.send_to_nick(nick, self.get_userip_list())
 										
+										for unick in uips:
+											self.send_to_nick(unick, '$UserIP %s %s$$|' %(nick, user.get_ip()))
+
 
 										self.send_usercommands_to_nick(nick)
 										self.send_to_nick(nick, '$HubTopic %s|' % self.core_settings['topic'])
+										
 										#logging.debug (repr(self.nicks))
 										#logging.debug (repr(self.addrs))
 									else:
@@ -797,6 +813,19 @@ class DCHub:
 				oplist+=user.nick+"$$"
 		#return "%s|" % (oplist[:-2],)
 		return oplist+'|'
+
+	def get_userip_list( self ):
+		uip='$UserIP '
+		for user in self.nicks.itervalues():
+			uip+='%s %s$$' % (user.nick, user.get_ip())
+		return uip+'|'
+	def get_userip_acc_list(self):
+		uip=[]
+		for user in self.nicks.itervalues():
+			if user.level in self.core_settings['userip']:
+				uip.append(user.nick)
+		return uip
+
 	def save_settings(self):
 		logging.debug('saving settigs')
 		try:
