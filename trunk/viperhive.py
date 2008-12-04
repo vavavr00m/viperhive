@@ -545,7 +545,7 @@ class DCHub:
 		if len(acmd)==2:
 			if acmd[0][1:-1]==self.addrs[addr].nick:
 				if acmd[1][0]==self.core_settings['cmdsymbol']:
-					tmp=threading.Thread(None,self.parse_cmd,'cmd_parser: %s' % msg,(acmd[1][1:],addr,))
+					tmp=threading.Thread(None,self.parse_cmd,'cmd_parser',(acmd[1][1:],addr,))
 					tmp.setDaemon(True)
 					tmp.start()
 					#self.parse_cmd(acmd[1][1:],addr)
@@ -811,6 +811,9 @@ class DCHub:
 						sock.send(msg.encode(self.charset))
 					except:
 						logging.debug('socket error %s' % trace())
+
+	def send_pm_to_nick(self,fnick,nick,msg):
+		self.send_to_nick(nick,'$To: %s From: %s $<%s> %s|' % (nick, fnick, fnick, msg))
 
 	def send_to_nick(self,nick,msg):
 		if nick in self.nicks:
