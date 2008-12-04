@@ -142,6 +142,8 @@ class DCHub:
 		defcore_settings['autosave']=120
 		defcore_settings['userip']=['owner', 'op']
 
+		defcore_settings['hubinfo']={'adress':'example.com','description':'Viperhive powered hub','type':'ViperHive Hub', 'hubowner':'owner'}
+
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
 
@@ -375,6 +377,7 @@ class DCHub:
 						logging.debug ('recived: %s from %s' % (str, addr))
 						if str[-1]=="|":
 							if self.emit('onRecivedSomething',addr):
+								logging.debug('Recived: %s' % str)
 								if len(str)>0:
 									msgarr=str.split('|')
 									for i in msgarr:
@@ -399,18 +402,27 @@ class DCHub:
 		try:
 			try:
 				self.work=True
-				thread.start_new_thread(self.pinger,(120,))
-				thread.start_new_thread(self.settings_autosaver,(self.settings['core']['autosave'],))
+				self.pingthread=threading.Thread(None,self.pinger,'pinger',(120,))
+				self.autosaver=threading.Thread(None,self.settings_autosaver,'saver',(self.settings['core']['autosave'],))
+				self.pingthread.setDaemon(True)
+				self.autosaver.setDaemon(True)
+
+				self.pingthread.start()
+				self.autosaver.start()
 
 				while self.work:
 					(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
 
 					for sock in sread:
 						# Start new thread to avoid hub lock when user connecting
-						thread.start_new_thread(self.accept_new_connection,())
+						newsock, (host, port) = self.srvsock.accept()
+						connhandler=threading.Thread(None,self.accept_new_connection,'newConnection: %s %s' %(str(host), str(port)),(newsock, host, port))
+						connhandler.setDaemon(True)
+						connhandler.start()
 						#self.accept_new_connection()
 			except:
 				logging.error(trace())
+				self.on_exit()
 		finally:
 			# Save settings before exiting
 			self.on_exit()
@@ -479,9 +491,25 @@ class DCHub:
 					if self.addrs[addr].nick==sender:
 						if self.emit('onSearchResult',sender,reciver,cmd):
 							self.send_to_nick(reciver,cmd+"|")
+		elif acmd[0]=='$HubINFO':
+			hubinfo='$HubINFO '
+			info=core_settings['hubinfo']
+			hubinfo+=self.core_settings['hubname']+'$'
+			hubinfo+=info.get('adress','')+':'+core_settings['port']+'$'
+			hubinfo+=info.get('description','')+'$'
+			hubinfo+=info.get('max_users','')+'$'
+			hubinfo+=info.get('min_share','')+'$'
+			hubinfo+=info.get('min_slots','0')+'$'
+			hubinfo+=info.get('max_hubs','')+'$'
+			hubinfo+=info.get('type','')+'$'
+			hubinfo+=info.get('owner','')+'$'
+			hubinfo+='|'
+			self.send_to_addr( addr,hubinfo )
 
 		else:
 			logging.debug('Unknown protocol command: %s from: %s' % (cmd,addr))
+
+		return
 
 
 	def parse_cmd(self,cmd,addr):
@@ -508,6 +536,7 @@ class DCHub:
 				self.send_to_addr(addr,self._('<HUB> No such command'))
 		else:
 			self.send_to_addr(addr,self._('<HUB> Premission denied'))
+		return
 
 
 
@@ -516,7 +545,9 @@ class DCHub:
 		if len(acmd)==2:
 			if acmd[0][1:-1]==self.addrs[addr].nick:
 				if acmd[1][0]==self.core_settings['cmdsymbol']:
-					thread.start_new_thread(self.parse_cmd,(acmd[1][1:],addr,))
+					tmp=threading.Thread(None,self.parse_cmd,'cmd_parser: %s' % msg,(acmd[1][1:],addr,))
+					tmp.setDaemon(True)
+					tmp.start()
 					#self.parse_cmd(acmd[1][1:],addr)
 				else:
 					if self.emit('onMainChatMsg',acmd[0][1:-1],acmd[1]):
@@ -524,11 +555,11 @@ class DCHub:
 			else:
 				logging.warning('user tried to use wrong nick in MC. Real nick: %s. Message: %s' % (self.addrs[addr].nick, msg))
 				self.drop_user_by_addr(addr)
+		return
 
 
-	def accept_new_connection( self ):
+	def accept_new_connection( self, newsock, host, port ):
 		try:
-			newsock, (host, port) = self.srvsock.accept()
 			addr='%s:%s' % (host, port)
 			logging.debug ('connecting: %s' % addr)
 			if self.emit('onConnecting', addr):
@@ -538,6 +569,7 @@ class DCHub:
 				logging.debug(repr(sock))
 
 				if sock!=[]:
+					newsock.settimeout(0.0)
 					s=unicode(newsock.recv(4096),self.charset)
 					supports=self.recp['Supports'].search(s)
 					if supports!=None:
@@ -659,8 +691,14 @@ class DCHub:
 											#adding worker
 											logging.info('Many users. Appending worker')
 											self.descriptors.append([newsock])
-											self.clthreads.append(threading.Thread(None,self.clientserv,None,(len(self.descriptors)-1,)))
-											self.clthreads[(len(self.descriptors)-1)].start()
+											try:
+												newthread=(threading.Thread(None,self.clientserv,'worker',(len(self.descriptors)-1,)))
+												logging.debug(newthread.getName())
+												newthread.setDaemon(True)
+												newthread.start()
+											except:
+												logging.error(trace())
+											self.clthreads.append(newthread)
 												
 										
 										if user.level in self.oplevels:
@@ -692,6 +730,7 @@ class DCHub:
 										self.send_usercommands_to_nick(nick)
 										self.send_to_nick(nick, '$HubTopic %s|' % self.core_settings['topic'])
 										
+
 										#logging.debug (repr(self.nicks))
 										#logging.debug (repr(self.addrs))
 									else:
@@ -712,9 +751,10 @@ class DCHub:
 					newsock.close()
 			else:
 				logging.debug('Connectin not allowed by plugins')
-			return
+			logging.debug('handheld complite with %s' % nick)
 		except:
 			logging.debug('Unexpected error: %s' % trace())
+		return
 
 
 
