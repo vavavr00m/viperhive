@@ -563,7 +563,7 @@ class DCHub:
 			addr='%s:%s' % (host, port)
 			logging.debug ('connecting: %s' % addr)
 			if self.emit('onConnecting', addr):
-				newsock.send('$Lock %s|$HubName %s|<HUB> Hub is powered by ViperHive [http://dc.hovel.ru]|' % ( self.LOCK , self.core_settings['hubname'].encode(self.charset) ) )
+				newsock.send('$Lock %s|$HubName %s|<HUB> Hub is powered by ViperHive [ http://dc.hovel.ru http://code.google.com/p/viperhive/ ]|' % ( self.LOCK , self.core_settings['hubname'].encode(self.charset) ) )
 				(sock, sw, sx)=select.select([newsock],[],[],15)
 				
 				logging.debug(repr(sock))
