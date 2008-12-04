@@ -12,6 +12,7 @@ autoload:
 - say
 - motd
 - regme
+- massmsg
 autosave: 120
 cmdsymbol: '!'
 hubinfo:
