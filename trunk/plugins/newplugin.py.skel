@@ -28,7 +28,7 @@ class name_plugin(plugin.plugin):
                 # --- REGISTERING USERCOMMANDS
 		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU\\ITEM')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
 		
-	#def COMMAND(self,addr,params):
+	#def COMMAND(self,addr,params=[]):
 	#	#params 'nick' 'message'
 	#
 	#	return RESULT_STRING
