@@ -20,8 +20,8 @@ hubinfo:
   hubowner: owner
   type: ViperHive Hub
 hubname: Viperhive powered hub
-loglevel: 10
-port: 11411
+loglevel: 20
+port: 411
 topic: Viperhive powered hub
 userip:
 - owner
