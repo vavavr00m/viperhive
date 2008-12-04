@@ -14,9 +14,14 @@ autoload:
 - regme
 autosave: 120
 cmdsymbol: '!'
+hubinfo:
+  adress: example.com
+  description: Viperhive powered hub
+  hubowner: owner
+  type: ViperHive Hub
 hubname: Viperhive powered hub
-loglevel: 20
-port: 411
+loglevel: 10
+port: 11411
 topic: Viperhive powered hub
 userip:
 - owner

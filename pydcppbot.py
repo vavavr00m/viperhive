@@ -73,9 +73,9 @@ class dcppbot (dcpp):
 #HE WE ARE. LAUNCHING...	
 if __name__=='__main__':
 	k=[]
-	for i in xrange(0,10):
+	for i in xrange(0,500):
 		try:
-			dc=dcppbot('localhost', 411, '%s' % i)
+			dc=dcppbot('localhost', 11411, '%s' % i)
 			thread.start_new_thread(dc.drop_msgs,())
 			k.append(dc)
 			print(len(k))
