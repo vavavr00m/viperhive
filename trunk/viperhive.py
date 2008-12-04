@@ -569,7 +569,7 @@ class DCHub:
 				logging.debug(repr(sock))
 
 				if sock!=[]:
-					newsock.settimeout(0.0)
+					newsock.settimeout(5.0)
 					s=unicode(newsock.recv(4096),self.charset)
 					supports=self.recp['Supports'].search(s)
 					if supports!=None:
@@ -823,6 +823,7 @@ class DCHub:
 				logging.debug('senging %s to %s' % (msg, nick))
 				self.nicks[nick].descr.send(msg.encode(self.charset))
 			except:
+				logging.debug('Error while sending %s to %s. Dropping. %s' % (msg,nick,trace()))
 				self.drop_user_by_nick(nick)
 				logging.debug('socket error %s. user lost!' % trace() )
 		else:
