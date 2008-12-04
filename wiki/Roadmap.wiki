@@ -1,9 +1,10 @@
 #summary roadmap of viperhive project
 
- * UserIP http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP
- * UserIP2 http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP
- * MassMessage plugin
+ * ~~UserIP http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP~~
+ * ~~UserIP2 http://web.archive.org/web/20061208051039/http://www.dcpp.net/wiki/index.php/$UserIP~~
+ * ~~MassMessage plugin~~
  * AntiFlood Plugin
  * IPLog Plugin
+ * Block plugin - block download/upload
  * Add RangeBan support for ban plugin
  * $HubINFO support
