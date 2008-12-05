@@ -4,7 +4,10 @@
  * ~~UserIP2~~
  * ~~MassMessage plugin~~
  * AntiFlood Plugin
- * IPLog Plugin
+ * ~~IPLog Plugin~~
  * Block plugin - block download/upload
  * Add RangeBan support for ban plugin
  * ~~$HubINFO support~~
+ * *Channel plugin*
+
+*bold* - current task
