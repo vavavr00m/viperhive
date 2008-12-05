@@ -17,7 +17,7 @@ autoload:
 autosave: 120
 cmdsymbol: '!'
 hubinfo:
-  adress: example.com
+  address: example.com
   description: Viperhive powered hub
   hubowner: owner
   type: ViperHive Hub
