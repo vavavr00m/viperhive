@@ -142,7 +142,7 @@ class DCHub:
 		defcore_settings['autosave']=120
 		defcore_settings['userip']=['owner', 'op']
 
-		defcore_settings['hubinfo']={'adress':'example.com','description':'Viperhive powered hub','type':'ViperHive Hub', 'hubowner':'owner'}
+		defcore_settings['hubinfo']={'address':'example.com','description':'Viperhive powered hub','type':'ViperHive Hub', 'hubowner':'owner'}
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
@@ -491,11 +491,11 @@ class DCHub:
 					if self.addrs[addr].nick==sender:
 						if self.emit('onSearchResult',sender,reciver,cmd):
 							self.send_to_nick(reciver,cmd+"|")
-		elif acmd[0]=='$HubINFO':
+		elif acmd[0]=='$HubINFO' or acmd[0]=='$BotINFO':
 			hubinfo='$HubINFO '
-			info=core_settings['hubinfo']
+			info=self.core_settings['hubinfo']
 			hubinfo+=self.core_settings['hubname']+'$'
-			hubinfo+=info.get('adress','')+':'+core_settings['port']+'$'
+			hubinfo+=info.get('address','')+':'+self.core_settings['port']+'$'
 			hubinfo+=info.get('description','')+'$'
 			hubinfo+=info.get('max_users','')+'$'
 			hubinfo+=info.get('min_share','')+'$'
