@@ -31,7 +31,7 @@ class massmsg_plugin(plugin.plugin):
 	def MassMsg(self,addr,params=[]):
 		#params 'nick' 'message'
 		if len(params)>0:
-			fnick=self.hub.addrs[addr].nick
+			fnick=self.hub.core_settings['hubname'].replace(' ','_')
 			for nick in self.hub.nicks.keys():
 				self.hub.send_pm_to_nick(fnick, nick, ' '.join(params))
 		else:
