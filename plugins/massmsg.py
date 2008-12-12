@@ -32,7 +32,7 @@ class massmsg_plugin(plugin.plugin):
 		#params 'nick' 'message'
 		if len(params)>0:
 			fnick=self.hub.addrs[addr].nick
-			for nick in self.hub.nicks:
+			for nick in self.hub.nicks.keys():
 				self.hub.send_pm_to_nick(fnick, nick, ' '.join(params))
 		else:
 			return self.hub._('Params error')
