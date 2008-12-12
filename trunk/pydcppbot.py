@@ -6,36 +6,25 @@
 import socket, re, time
 import traceback
 import thread
+import select
+import logging
 
-class dcpp(object):
-	def __init__(self,HOST, PORT, NICK, PASS=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0):
+class dcppbot(object):
+	def __init__(self, HOST, PORT, NICK, PASS=None, parser=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0):
 		self.HOST=HOST
 		self.PORT=PORT
 		self.NICK=NICK
 		self.DESCR=DESCR
+		self.PASS=PASS
 		self.TAG=TAG
 		self.SHARE=SHARE
-		self.sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect((HOST,PORT))
-		lock=self.sock.recv(1024)
-		lock_key=re.findall('\$Lock[\s](.*?)[\s]', lock)[0]
-		key =self._createKey(lock).encode("utf-8")
-		self.sock.send('$Key %s|$ValidateNick %s|'%(key,NICK))
-		print self.view_chat()
-		if PASS == None:
-			self.sock.send('$Version 1,0091|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(NICK,DESCR,TAG,SHARE))
-		else: 
-			self.sock.send('$Version 1,0091|\
-			$MyPass %s\
-			|$GetNickList\
-			|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(PASS,NICK,DESCR,TAG,SHARE))
+		self.parser=parser
+		self.sock=None
+		self.work=False
 			
 	def close(self):
 		self.sock.close()
-	def view_chat(self):
-		return  (self.sock.recv(2048))
-	def raw_view(self):
-		self.sock.recv(2048)
+	
 	def send_mainchat(self, text):
 		text=('<%s> %s|'%(self.NICK,text))
 		self.sock.send(text)
@@ -45,7 +34,7 @@ class dcpp(object):
 		
 	def drop_msgs(self):
 		while True:
-			self.view_chat()
+			self.sock.recv(2048)
 		
 	def _createKey(self,lock):
 		key = {}
@@ -64,12 +53,58 @@ class dcpp(object):
 
 		return out
 
-class dcppbot (dcpp):
-	def __init__(self,HOST, PORT, NICK, PASS=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0):
-		super(dcppbot,self).__init__(HOST, PORT, NICK, PASS, DESCR, TAG, SHARE)
+	def run( self, newparser=None ):
+		
+		logging.debug( 'RUNNING PYDCPPBOT MESSAGE PARSER' )
+
+		self.work=True
+		self.sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.settimeout(5)
+		self.sock.connect((self.HOST,self.PORT))
+		lock=self.sock.recv(1024)
+		lock_key=re.findall('\$Lock[\s](.*?)[\s]', lock)[0]
+		key =self._createKey(lock).encode("utf-8")
+		self.sock.send('$Key %s|$ValidateNick %s|'%(key,self.NICK))
+		self.sock.recv(4096)
+		if self.PASS == None:
+			self.sock.send('$Version 1,0091|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.NICK,self.DESCR,self.TAG,self.SHARE))
+		else: 
+			self.sock.send('$Version 1,0091|$MyPass %s|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.PASS,self.NICK,self.DESCR,self.TAG,self.SHARE))
 
 
-	
+		if newparser!=None:
+			self.parser=newparser
+		if self.parser==None:
+			logging.error('BOT WARNING: No parser function')
+
+
+
+		while self.work:
+			(sr,sw,sx)=select.select([self.sock],[],[],1)
+			if sr==None:
+				continue
+			
+			s=self.sock.recv(4096)
+
+			# check if message too long?
+			k=5
+			while s[-1]!='|' or k>0:
+				(sr,sw,sx)=select.select([self.sock],[],[],1)
+				s+=self.sock.recv(4096)
+			if s[-1]!='|':
+				continue
+			if self.parser!=None:
+				self.parser( s )
+
+		self.sock.send('$Quit|')
+		self.sock.close()
+
+		return
+
+
+
+
+
 #HE WE ARE. LAUNCHING...	
 if __name__=='__main__':
 	k=[]

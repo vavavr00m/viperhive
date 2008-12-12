@@ -15,6 +15,8 @@ import os
 import traceback
 import codecs
 import time
+import string
+import random
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
@@ -28,6 +30,13 @@ else:
 
 
 reload(sys)
+
+def genpass( size=10 ):
+	s=[]
+	for i in range( size ):
+		s.append( random.choice( string.letters + string.digits ) )
+
+	return ''.join(s)
 
 def lock2key (lock):
 		key = {}
@@ -86,7 +95,7 @@ class DCHub:
 		return self.lang.get(string,string)
 
 	
-	def __init__( self ):
+	def __init__( self, path='./' ):
 
 		# COMMANDS
 		self.commands={}
@@ -112,8 +121,8 @@ class DCHub:
 	   
 
 		# SET PATHS
-		self.path_to_settings="./settings/"
-		self.path_to_plugins="./plugins/"
+		self.path_to_settings=path+"settings/"
+		self.path_to_plugins=path+"plugins/"
 
 
 		# ----- SETTINGS -----
@@ -228,7 +237,7 @@ class DCHub:
 
 
 		try:
-			lpath='./languages/'+lang+'/'
+			lpath=path+'languages/'+lang+'/'
 			lfiles=os.listdir(lpath)
 			for i in lfiles:
 				# LOAD MESSAGES FOR CURRENT LANGUAGE
@@ -296,10 +305,17 @@ class DCHub:
 	   
 		# -- Self control
 		self.usercommands['Passwd']='$UserCommand 1 2 '+self._('Me\\Set MY password...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Passwd %[line:'+self._('newpassword')+':]&#124;|'
+		
 
 
 		# PLUGINS
 		self.plugs={}
+
+
+		#LOCKS
+
+		self.userlock=threading.RLock() #LOCK FOR self.nicks AND self.addrs
+		
 
 		# AUTOLOAD PLUGINS
 		for i in self.core_settings['autoload']:
@@ -328,7 +344,7 @@ class DCHub:
 		while self.work:
 			time.sleep(atime)
 			logging.debug('pinging')
-			try:
+			try:	#DO NOT ACQUIRE USERLOCK: ping can be very long, and users cand be dropped wile it done
 				for nick in self.nicks.iterkeys():
 					self.send_to_nick(nick,"|")
 			except:
@@ -616,10 +632,10 @@ class DCHub:
 								passw=self.recp['MyPass'].search(s)
 								if passw!=None:
 									passw=passw.group(0)
-									logging.debug('MyPass %s' % passw)
+									logging.debug('MyPass %s' % repr(passw))
 								
 									if passw!=self.reglist[nick]['passwd']:
-										logging.info('wrong pass')
+										logging.info('wrong pass: true is: %s' % repr(self.reglist[nick]['passwd']))
 										newsock.send(('<HUB> %s|' % (self._('Password incorrect. Provided: %s') % str(passw),)).encode(self.charset))
 										newsock.send('$BadPass|')
 										validated=False
@@ -674,23 +690,31 @@ class DCHub:
 									user.level=self.reglist[nick]['level']
 								else:
 									user.level='unreg'
+
+								self.userlock.acquire()
 								self.nicks[nick]=user
 								self.addrs[addr]=user
+								self.userlock.release()
 								try:
 									if self.emit('onConnected',user):
 										logging.debug('Validated. Appending.')
 										
+										
 										free=None # No free workers
 										for i, val in enumerate(self.descriptors): # Search for  free worker
 											if len(val)<self.WORKER_MAX:
+												self.userlock.acquire()
 												val.append(newsock)
+												self.userlock.release()
 												free=i
 												break
 
 										if free==None:
 											#adding worker
 											logging.info('Many users. Appending worker')
+											self.userlock.acquire()
 											self.descriptors.append([newsock])
+											self.userlock.release()
 											try:
 												newthread=(threading.Thread(None,self.clientserv,'worker',(len(self.descriptors)-1,)))
 												logging.debug(newthread.getName())
@@ -698,6 +722,7 @@ class DCHub:
 												newthread.start()
 											except:
 												logging.error(trace())
+
 											self.clthreads.append(newthread)
 												
 										
@@ -705,15 +730,21 @@ class DCHub:
 											self.send_to_all(self.get_op_list())
 
 										if not 'NoHello' in supports:
+											self.userlock.acquire()
 											self.hello.append(newsock)
+											self.userlock.release()
 										
 										if not 'NoGetINFO' in supports:
 											newsock.send(self.get_nick_list())
 											newsock.send(self.get_op_list().encode(self.charset))
 										else:
-											for i in self.nicks.itervalues():
-												newsock.send(i.MyINFO.encode(self.charset)+"|")
-												newsock.send(self.get_op_list().encode(self.charset))
+											self.userlock.acquire()
+											try:
+												for i in self.nicks.itervalues():
+													newsock.send(i.MyINFO.encode(self.charset)+"|")
+													newsock.send(self.get_op_list().encode(self.charset))
+											finally:
+												self.userlock.release()
 										self.send_to_all(info+"|")
 										
 										uips=self.get_userip_acc_list()
@@ -762,10 +793,11 @@ class DCHub:
 		if addr in self.addrs:
 			sock=self.addrs[addr].descr
 			nick=self.addrs[addr].nick
-			self.drop_user(addr,nick,sock)
+			threading.Thread(None, self.drop_user, 'dropping_user', (addr,nick,sock))
 
 	def drop_user(self,addr,nick,sock):
 		logging.debug('dropping %s %s %s' % (addr, nick, sock))
+		self.userlock.acquire()
 		try:
 			for i in self.descriptors:
 				if sock in i: i.remove(sock)
@@ -775,6 +807,7 @@ class DCHub:
 			sock.close()
 		except:
 				logging.debug('something wrong while dropping client %s' % trace())
+		self.userlock.release()
 		logging.debug ('Quit %s' % nick)
 		self.send_to_all('$Quit %s|' % nick)
 		self.emit('onUserLeft',addr,nick)
@@ -783,34 +816,40 @@ class DCHub:
 		if nick in self.nicks:
 			sock=self.nicks[nick].descr
 			addr=self.nicks[nick].addr
-			self.drop_user(addr,nick,sock)
+			threading.Thread(None, self.drop_user, 'dropping_user', (addr,nick,sock))
 
 	def drop_user_by_sock(self, sock):
 		A=None
 		N=None
+		self.userlock.acquire()
+		try:
+			for nick, user in self.nicks.iteritems():
+				if user.descr==sock:
+					N=nick
 
-		for nick, user in self.nicks.iteritems():
-			if user.descr==sock:
-				N=nick
+			for addr, user in self.addrs.iteritems():
+				if user.descr==addr:
+					A=addr
+		finally:
+			self.userlock.release()
 
-		for addr, user in self.addrs.iteritems():
-			if user.descr==addr:
-				A=addr
-
-		self.drop_user(A,N,sock)
-
+		threading.Thread(None, self.drop_user, 'dropping_user', (A,N,sock))
 
 	def send_to_all(self, msg, omitSock=None):
 		logging.debug('sending to all %s' % msg)
 		if not (len(msg)>0 and msg[-1]=="|"):
 			msg=msg+"|"
-		for part in self.descriptors:
-			for sock in part:
-				if sock!=self.srvsock and sock!=omitSock:
-					try:
-						sock.send(msg.encode(self.charset))
-					except:
-						logging.debug('socket error %s' % trace())
+		self.userlock.acquire()
+		try:
+			for part in self.descriptors:
+				for sock in part:
+					if sock!=self.srvsock and sock!=omitSock:
+						try:
+							sock.send(msg.encode(self.charset))
+						except:
+							logging.debug('socket error %s' % trace())
+		finally:
+			self.userlock.release()
 
 	def send_pm_to_nick(self,fnick,nick,msg):
 		self.send_to_nick(nick,'$To: %s From: %s $<%s> %s|' % (nick, fnick, fnick, msg))
@@ -843,31 +882,53 @@ class DCHub:
 	def get_nick_list(self):
 		nicklist="$NickList "
 		oplist="$OpList "
-		for user in self.nicks.itervalues():
-			nicklist+=user.nick+"$$"
-			if user.level in self.oplevels:
-				oplist+=user.nick+"$$"
+		self.userlock.acquire()
+		try:
+			for user in self.nicks.itervalues():
+				nicklist+=user.nick+"$$"
+				if user.level in self.oplevels:
+					oplist+=user.nick+"$$"
+		except:
+			pass
+		self.userlock.release()
 		
 		return "%s|%s|" % (nicklist[:-2], oplist[:-2])
 	def get_op_list(self):
 		#repeat some code for faster access
 		oplist="$OpList "
-		for user in self.nicks.itervalues():
-			if user.level in self.oplevels:
-				oplist+=user.nick+"$$"
+		self.userlock.acquire()
+		try:
+			for user in self.nicks.itervalues():
+				if user.level in self.oplevels:
+					oplist+=user.nick+"$$"
+		except:
+			pass
+
+		self.userlock.release()
 		#return "%s|" % (oplist[:-2],)
 		return oplist+'|'
 
 	def get_userip_list( self ):
 		uip='$UserIP '
-		for user in self.nicks.itervalues():
-			uip+='%s %s$$' % (user.nick, user.get_ip())
+		self.userlock.acquire()
+		try:
+			for user in self.nicks.itervalues():
+				uip+='%s %s$$' % (user.nick, user.get_ip())
+		except:
+			pass
+		self.userlock.release()
 		return uip+'|'
 	def get_userip_acc_list(self):
 		uip=[]
-		for user in self.nicks.itervalues():
-			if user.level in self.core_settings['userip']:
-				uip.append(user.nick)
+		self.userlock.acquire()
+		try:
+			for user in self.nicks.itervalues():
+				if user.level in self.core_settings['userip']:
+					uip.append(user.nick)
+		except:
+			pass
+		self.userlock.release()
+
 		return uip
 
 	def save_settings(self):
@@ -925,8 +986,13 @@ class DCHub:
 				self.send_to_nick(nick, cmd)
 
 	def send_usercommands_to_all(self):
-		for nick in self.nicks.iterkeys():
-			self.send_usercommands_to_nick(nick)
+		self.userlock.acquire()
+		try:
+			for nick in self.nicks.iterkeys():
+				self.send_usercommands_to_nick(nick)
+		except:
+			pass
+		self.userlock.release()
 
 
 	def on_exit(self):
@@ -1128,6 +1194,8 @@ class DCHub:
 								if value in self.slots[key]:
 									self.slots[key].remove(value)
 						self.send_usercommands_to_all()
+						plug.unload()
+						del plug
 						return self._('Success')
 					else:
 						return self._('Plugin not loaded')
@@ -1233,5 +1301,6 @@ class DCHub:
 
 #RUNNING HUB
 if __name__=='__main__':
-	hub=DCHub()
+	sys.path.append('./')
+	hub=DCHub('./')
 	hub.run()
