@@ -1212,7 +1212,7 @@ class DCHub:
 		if len(params)>=1:
 			topic=' '.join(params)
 			self.core_settings['topic']=topic
-			self.end_to_all('$HubTopic %s|' % topic)
+			self.send_to_all('$HubTopic %s|' % topic)
 			return self._('Success')
 		else:
 			return self._('Params error')
