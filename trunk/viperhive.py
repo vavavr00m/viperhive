@@ -326,7 +326,7 @@ class DCHub:
 		#logging.debug('emitting %s' % signal)
 		#logging.debug('emit map %s' % repr(self.slots))
 		for slot in self.slots.get(signal,[]):
-			logging.debug( 'Emitting: %s' % signal )
+			logging.debug( 'Emitting: %s, for  %s slot' % ( signal, repr( slot )) )
 			try:
 				if not slot(*args):
 					logging.debug( 'Emit %s: FALSE' % signal )
@@ -1140,17 +1140,23 @@ class DCHub:
 					self.plugs[params[0]]=obj
 					self.commands.update(obj.commands)
 					self.usercommands.update(obj.usercommands)
-					for key,value in obj.slots.items():
-					   if key in self.slots:
-						   self.slots[key].append(value)
-					   else:
-						   self.slots[key]=[value]
+					logging.debug( 'Plugin %s slots: %s' % (params[0], repr( obj.slots ) ) )
+					for key,value in obj.slots.iteritems():
+						logging.debug( 'Activating Slot: %s, on plugin %s' % ( key, params[0] ) )
+
+
+						if key in self.slots:
+							self.slots[key].append(value)
+							
+						else:
+							self.slots[key]=[value]
+					logging.debug( 'MessageMap: %s' % repr( self.slots ))
 					self.send_usercommands_to_all()
 					return self._('Success')
 				except:
 					e=trace()
-					logging.debug('Plugin load error: %s')
-					return self._('Plugin load error: %s' % (e))
+					logging.debug( 'Plugin load error: %s' % (e,) )
+					return self._( 'Plugin load error: %s' % (e,) )
 			else:
 				return self._('Plugin already loaded')
 		else:
@@ -1167,7 +1173,7 @@ class DCHub:
 							self.commands.pop(key,None)
 						for key in plug.usercommands.keys():
 							self.usercommands.pop(key,None)
-						for key, value in plug.slots.items():
+						for key, value in plug.slots.iteritems():
 							if key in self.slots:
 								if value in self.slots[key]:
 									self.slots[key].remove(value)

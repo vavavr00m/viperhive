@@ -11,6 +11,15 @@
 import plugin
 import yaml
 import datetime
+import time
+import logging
+import traceback
+trace=None
+if 'format_exc' in dir(traceback):
+        from traceback import format_exc as trace
+else:
+        from traceback import print_exc as trace
+
 
 class ban_plugin(plugin.plugin):
         
@@ -39,19 +48,21 @@ class ban_plugin(plugin.plugin):
                 self.usercommands['ListBans']='$UserCommand 1 2 '+hub._('Ban\\ListBans')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'ListBans &#124;|'
 
         def onConnected(self,user):
+		logging.debug ( 'ban check %s - %s' % ( user.nick, user.addr ) )
                 if user.level in self.banlist['immune']:
                         return True
                 if user.nick in self.banlist['nicks']:
-                        if datetime.datetime.strptime(self.banlist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')>datetime.datetime.now():
+                        if datetime.datetime(*(time.strptime(self.banlist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 return False
                         else:
                                 self.banlist['nicks'].pop(user.nick)
                 adr=user.addr.split(':')[0]
                 if adr in self.banlist['addrs']:
-                        if datetime.datetime.strptime(self.banlist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')>datetime.datetime.now():
+			if datetime.datetime(*(time.strptime(self.banlist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 return False
                         else:
                                 self.banlist['addrs'].pop(adr)
+		logging.debug( 'banlist passed by %s - %s' % ( user.nick, user.addr ) )
                 return True
 
         def Ban(self, addr, params):
