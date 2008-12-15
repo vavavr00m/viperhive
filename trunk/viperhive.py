@@ -351,6 +351,57 @@ class DCHub:
 			self.save_settings()
 		return True
 
+	def receive_and_parse( self, sock ):
+		try:
+			# Received something on a client socket
+			try:
+				str = unicode(sock.recv(4096), self.charset)
+			except:
+				logging.debug('recive from client error %s' % trace())
+				return
+			# Check to see if the peer socket closed
+			if str == '':
+				host,port = sock.getpeername()
+				addr = '%s:%s' % (host, port)
+				logging.debug ('disconnecting: %s..' % addr)
+				self.emit('onDisconnected',addr)
+				self.drop_user_by_addr(addr)
+			else:
+				# -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
+				i=10
+				while str[-1]!="|" and i>0:
+					try:
+						str=str+unicode(sock.recv(4096),self.charset)
+					except:
+						logging.debug('recive from client error %s' % trace())
+						return
+					i-=1
+				# --
+
+				host,port = sock.getpeername()
+				addr = '%s:%s' % (host, port)
+				logging.debug ('recived: %s from %s' % (str, addr))
+				if str[-1]=="|":
+					if self.emit('onRecivedSomething',addr):
+						logging.debug('Recived: %s' % str)
+						if len(str)>0:
+							msgarr=str.split('|')
+							for i in msgarr:
+								if i=="":
+									pass
+								elif i[0]=="$":
+									self.parse_protocol_cmd(i,addr)
+								else:
+									self.parse_chat_msg(i,addr)
+				else:
+					logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
+	   
+		except:
+			self.drop_user_by_sock(sock)
+			logging.debug('User Lost: %s' % trace()) 
+	
+
+
 
 	def clientserv(self, part):
 		''' listen for client sockets in descriptors[part]'''
@@ -363,46 +414,8 @@ class DCHub:
 				time.sleep(1)
 				sread=[]
 			for sock in sread:
-				try:
-					# Received something on a client socket
-					str = unicode(sock.recv(4096), self.charset)
-					# Check to see if the peer socket closed
-					if str == '':
-						host,port = sock.getpeername()
-						addr = '%s:%s' % (host, port)
-						logging.debug ('disconnecting: %s..' % addr)
-						self.emit('onDisconnected',addr)
-						self.drop_user_by_addr(addr)
-					else:
-						# -- Recive up to 10 x 4096 from socket. If it still not empty - ignore it.
-						i=10
-						while str[-1]!="|" and i>0:
-							str=str+unicode(sock.recv(4096),self.charset)
-							i-=1
-						# --
-
-						host,port = sock.getpeername()
-						addr = '%s:%s' % (host, port)
-						logging.debug ('recived: %s from %s' % (str, addr))
-						if str[-1]=="|":
-							if self.emit('onRecivedSomething',addr):
-								logging.debug('Recived: %s' % str)
-								if len(str)>0:
-									msgarr=str.split('|')
-									for i in msgarr:
-										if i=="":
-											pass
-										elif i[0]=="$":
-											self.parse_protocol_cmd(i,addr)
-										else:
-											self.parse_chat_msg(i,addr)
-						else:
-							logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
-			   
-				except:
-					self.drop_user_by_sock(sock)
-					logging.debug('User Lost: %s' % trace()) 
-			
+				parser=threading.Thread(None, self.receive_and_parse, 'Recive/Parse', (sock,))
+				parser.start()
 		
 		print('clientserv %s stopped!' % part)
 		return
