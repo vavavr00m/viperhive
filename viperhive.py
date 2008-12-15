@@ -339,8 +339,7 @@ class DCHub:
 			time.sleep(atime)
 			logging.debug('pinging')
 			try:
-				for nick in self.nicks.keys():
-					self.send_to_nick(nick,"|")
+				self.send_to_all('|')
 			except:
 				pass
 		return True
@@ -821,6 +820,7 @@ class DCHub:
 						sock.send(msg.encode(self.charset))
 					except:
 						logging.debug('socket error %s' % trace())
+						self.drop_user_by_sock( sock )
 
 	def send_pm_to_nick(self,fnick,nick,msg):
 		self.send_to_nick(nick,'$To: %s From: %s $<%s> %s|' % (nick, fnick, fnick, msg))
@@ -1199,7 +1199,7 @@ class DCHub:
 		if len(params)>=1:
 			topic=' '.join(params)
 			self.core_settings['topic']=topic
-			self.send_to_all('$HubTopic %s|' % topic)
+			self.end_to_all('$HubTopic %s|' % topic)
 			return self._('Success')
 		else:
 			return self._('Params error')
