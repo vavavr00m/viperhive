@@ -30,7 +30,7 @@ class regme_plugin(plugin.plugin):
                 # --- REGISTERING USERCOMMANDS
 		self.usercommands['regme']='$UserCommand 1 2 '+hub._('Register My Nick ...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'regme %[line:'+hub._('password')+':]&#124;|'
 		
-	def regme(self,addr,params):
+	def regme(self,addr,params=[]):
 		#params 'passwd'
                 if len (params)<1:
                         return self.hub._('Params error') +'\n'+ self.hub._('Usage: %sregme password') % (hub.core_settings['cmdsymbol'], )
