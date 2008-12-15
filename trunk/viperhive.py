@@ -317,6 +317,7 @@ class DCHub:
 
 		logging.info ('Hub ready to start on port %s...' % self.core_settings['port'])
 
+		self.skipme=[]
 
 
 
@@ -325,11 +326,14 @@ class DCHub:
 		#logging.debug('emitting %s' % signal)
 		#logging.debug('emit map %s' % repr(self.slots))
 		for slot in self.slots.get(signal,[]):
+			logging.debug( 'Emitting: %s' % signal )
 			try:
 				if not slot(*args):
+					logging.debug( 'Emit %s: FALSE' % signal )
 					return False
 			except:
 				logging.error('PLUGIN ERROR: %s' % trace())
+		logging.debug( 'Emit %s: True' % signal )
 		return True
 
 	def pinger( self, atime ):
@@ -354,10 +358,12 @@ class DCHub:
 	def receive_and_parse( self, sock ):
 		try:
 			# Received something on a client socket
+			logging.debug( 'reciving from %s' % repr( sock ) )
 			try:
 				str = unicode(sock.recv(4096), self.charset)
 			except:
-				logging.debug('recive from client error %s' % trace())
+				logging.debug('recive from client error %s %s' % (trace(), repr(sock)))
+				self.skipme.remove( sock )
 				return
 			# Check to see if the peer socket closed
 			if str == '':
@@ -374,10 +380,11 @@ class DCHub:
 						str=str+unicode(sock.recv(4096),self.charset)
 					except:
 						logging.debug('recive from client error %s' % trace())
+						self.skipme.remove( sock )
 						return
 					i-=1
 				# --
-
+				logging.debug( 'parsing' )
 				host,port = sock.getpeername()
 				addr = '%s:%s' % (host, port)
 				logging.debug ('recived: %s from %s' % (str, addr))
@@ -393,9 +400,13 @@ class DCHub:
 									self.parse_protocol_cmd(i,addr)
 								else:
 									self.parse_chat_msg(i,addr)
+
+
 				else:
-					logging.warning ('Too big or wrong message recived from %s: %s' % (addr,s))
-	   
+					logging.warning ( 'Too big or wrong message recived from %s: %s' % (addr,s) )
+
+				self.skipme.remove( sock )
+
 		except:
 			self.drop_user_by_sock(sock)
 			logging.debug('User Lost: %s' % trace()) 
@@ -408,15 +419,25 @@ class DCHub:
 		logging.debug('clientserv %s started!' % part)
 		
 		while self.work:
-			if len(self.descriptors[part])>0:
-				(sread, swrite, sexc) = select.select( self.descriptors[part], [], [], 1 )
-			else:
-				time.sleep(1)
-				sread=[]
-			for sock in sread:
-				parser=threading.Thread(None, self.receive_and_parse, 'Recive/Parse', (sock,))
-				parser.start()
-		
+			try:
+				if len(self.descriptors[part])>0:
+					(sread, swrite, sexc) = select.select( self.descriptors[part], [], [], 1 )
+				else:
+					time.sleep(1)
+					sread=[]
+				for sock in sread:
+					if sock == None:
+						continue
+
+					#logging.debug( 'activity in socket %s' % repr( sock ) )
+					if sock not in self.skipme:
+					#	logging.debug( 'accepting activity' )
+						self.skipme.append( sock ) #Temporary remove socket, it will be served in separate thread
+						parser=threading.Thread(None, self.receive_and_parse, 'Recive/Parse', (sock,))
+						parser.start()
+			except:
+				logging.debug( 'clientserv error %s' % trace() )
+			
 		print('clientserv %s stopped!' % part)
 		return
 	def run( self ):
