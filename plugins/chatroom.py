@@ -2,6 +2,10 @@
 
 # --- chatroom plugin.
 #
+#    Chatroom Support for ViperHive
+#    
+#    STATUS: NOT WORKING
+#
 # ---
 
 import plugin
@@ -20,7 +24,6 @@ class chatroom( pydcppbot.dcppbot ):
 		logging.debug( 'CREATING CHATROOM' )
 
 		self.hub=hub
-		self.roomlock=threading.RLock()
 		self.nicks=[]
 		
 		passwd=unicode(viperhive.genpass(10))
@@ -28,26 +31,34 @@ class chatroom( pydcppbot.dcppbot ):
 		hub.reglist[name]={'level':'chatroom','passwd': passwd}
 
 		super( chatroom, self ).__init__( 'localhost', hub.core_settings['port'], name, passwd )
+		
+		self.charset = self.hub.charset
 
 	def parser ( self, msg ):
-		logging.debug( 'CHATROOM: parsing message' )
+		logging.debug( 'CHATROOM: parsing message %s' % msg )
 		
 		try:
-			amsg=recp.search(msg)
+			amsg=self.recp.search(msg)
 			if amsg==None:
 				return
+			logging.debug( 'CHATROOM: Message captured: %s' % msg )
 			nick=amsg.group(1)
+			message=amsg.group(2)
+			
+			logging.debug( 'CHATROOM: from: %s msg: %s' % ( nick, message ) )
 
 			if nick not in self.nicks:
 				return
 
-			msg='<%s> %s|' % (nick, amsg.gorup(2))
-			for i in nicks:
+			logging.debug( 'CHATROOM: nick %s accepted, sending message' % nick )
+
+			fmsg='<%s> %s|' % ( nick, message )
+			for i in self.nicks:
 				if i==nick:
 					continue
-				self.hub.send_pm_to_nick( self.NICK, i, msg )
+				self.hub.send_pm_to_nick( self.NICK, i, fmsg )
 		except:
-			logging.error('CHATROOM ERROR %s' % self.hub.trace() )
+			logging.error('CHATROOM ERROR %s' % viperhive.trace() )
 
 		logging.debug( 'CHATROOM: message parsed' )
 		return
@@ -80,13 +91,14 @@ class chatroom_plugin(plugin.plugin):
                 # --- REGISTERING COMMANDS ---
                 self.commands['join'] = self.join
 		self.commands['left'] = self.left
+		self.commands['listroom'] = self.listroom
 
 		self.loadrooms()
 		#self.commands['listroom'] = self.listroom
 		
                 # --- REGISTERING SLOTS (On Event reaction)
-		#self.slots['onUserLeft']=self.onUserLeft
-		#self.slots['onConnected']=self.onConnected
+		self.slots['onUserLeft']=self.onUserLeft
+		self.slots['onConnected']=self.onConnected
                 
                 # --- REGISTERING USERCOMMANDS
 		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU\\ITEM')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
@@ -100,22 +112,80 @@ class chatroom_plugin(plugin.plugin):
 		for i, r in self.settings.items():
 			room=chatroom( self.hub, i )
 			self.rooms[i]=room 
-			self.hub.userlock.acquire()
-			try:
-				for nick, user in self.hub.nicks.iteritems():
-					if user.level in r['autojoin']:
-						room.nicks.append(nick)
-			finally:
-				self.hub.userlock.release()
+			for nick, user in self.hub.nicks.iteritems():
+				if user.level in r['autojoin']:
+					room.nicks.append(nick)
 			
 			roomthread=threading.Thread( None, room.run, 'chatroom', () )
 			self.roomthreads[i]=roomthread
 			roomthread.start()
 
+
+	def onConnected( self, user ):
+		for rname, rparams in self.settings.items():
+			if user.nick in rparams['autojoin']:
+				self.rooms[rname].nicks.append( user.nick )
+		return True
+
+	def onUserLeft( self, addr, nick ):
+		for room in self.rooms.values():
+			if nick in room.nicks:
+				room.nicks.remove( nick )
+		return True
+
+
 	def join( self, addr, params=[]):
-		pass
+		# params ['room']
+		if len( params ) <= 0:
+			return self.hub._('Params error.')
+
+		room = params[0]
+		if room not in self.rooms:
+			return self.hub._('Params error.')
+
+		nick = self.hub.addrs[addr].nick
+		room=self.rooms[room]
+		if nick in room.nicks:
+			return self.hub._('Already in room.')
+
+		if nick in self.settings[room]['allow']:		
+			room.nicks.append( nick )
+		else:
+			return self.hub._( 'Premission denied.' )
+
+		return self.hub._('Success.')
+
 	def left( self, addr, params=[]):
-		pass
+		# params ['room']
+		if len( params ) <= 0:
+			return self.hub._('Params error.')
+
+		room = params[0]
+		if room not in self.rooms:
+			return self.hub._('Params error.')
+
+		nick = self.hub.addrs[addr].nick
+		room=self.rooms[room]
+		if nick not in room.nicks:
+			return self.hub._('Params error.')
+		room.nicks.remove( nick )
+		return  self.hub._('Success.')
+
+	def listroom( self, addr, params=[] ):
+		#params ['room']
+
+		if len( params ) <= 0:
+			return self.hub._( 'Params error.' )
+
+		room = params[0]
+		if room not in self.rooms:
+			return self.hub._( 'Params error.' )
+		room = self.rooms[room]
+		ans = self.hub._( 'Users in room %s: %s' ) % ( params[0], ', '.join(room.nicks) )
+
+		return ans
+
+
 	#def listroom( self, addr, params=[]):
 	#	pass
 	
