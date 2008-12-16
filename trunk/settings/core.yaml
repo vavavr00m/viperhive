@@ -2,6 +2,7 @@ Lang: ru.cp1251
 OpLevels:
 - owner
 - op
+- chatroom
 Protected:
 - owner
 - op
@@ -14,6 +15,8 @@ autoload:
 - regme
 - massmsg
 - iplog
+- chathist
+- chatroom
 autosave: 120
 cmdsymbol: '!'
 hubinfo:
