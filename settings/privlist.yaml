@@ -22,9 +22,20 @@ op:
 - Passwd
 - Help
 - Kick
+- join
+- left
+- listroom
 owner:
 - '*'
+- join
+- left
+- listroom
 reg:
 - Passwd
+- join
+- left
+- listroom
 unreg:
 - regme
+- join
+- left
