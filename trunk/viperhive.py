@@ -1169,6 +1169,7 @@ class DCHub:
 				try:
 					if params[0] in self.plugs:
 						plug=self.plugs.pop(params[0])
+						plug.unload()
 						for key in plug.commands.keys():
 							self.commands.pop(key,None)
 						for key in plug.usercommands.keys():
