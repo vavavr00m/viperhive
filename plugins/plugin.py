@@ -9,3 +9,6 @@ class plugin(object):
 		self.slots={}
 		self.usercommands={}
 
+	def unload( self ):
+		pass
+

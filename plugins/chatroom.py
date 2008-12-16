@@ -77,9 +77,6 @@ class chatroom_plugin(plugin.plugin):
 		self.roomthreads = {}
 		self.rooms = {}
 		
-		#testroom=chatroom( hub )
-		#test=threading.Thread( None, testroom.run, 'test', () )
-		#test.start()
 
                 # --- SETTINGS FOR PLUGIN ---
                 if 'chatroom' not in self.hub.settings:
@@ -101,7 +98,10 @@ class chatroom_plugin(plugin.plugin):
 		self.slots['onConnected']=self.onConnected
                 
                 # --- REGISTERING USERCOMMANDS
-		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU\\ITEM')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
+		self.usercommands['join']='$UserCommand 1 2 '+hub._('Chatrooms\\Join selected room')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'join %[nick]&#124;|'
+		self.usercommands['left']='$UserCommand 1 2 '+hub._('Chatrooms\\Left selected room')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'left %[nick]&#124;|'
+		self.usercommands['listroom']='$UserCommand 1 2 '+hub._('Chatrooms\\Who is in room?')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'listroom %[nick]&#124;|'
+
 	
 	def unload( self ):
 		logging.debug('DESTROYING CHATROOMS')
@@ -118,12 +118,13 @@ class chatroom_plugin(plugin.plugin):
 			
 			roomthread=threading.Thread( None, room.run, 'chatroom', () )
 			self.roomthreads[i]=roomthread
+			roomthread.setDaemon(True)
 			roomthread.start()
 
 
 	def onConnected( self, user ):
 		for rname, rparams in self.settings.items():
-			if user.nick in rparams['autojoin']:
+			if user.level in rparams['autojoin']:
 				self.rooms[rname].nicks.append( user.nick )
 		return True
 
@@ -144,16 +145,17 @@ class chatroom_plugin(plugin.plugin):
 			return self.hub._('Params error.')
 
 		nick = self.hub.addrs[addr].nick
+		level = self.hub.addrs[addr].level
 		room=self.rooms[room]
 		if nick in room.nicks:
 			return self.hub._('Already in room.')
 
-		if nick in self.settings[room]['allow']:		
+		if level in self.settings[params[0]]['allow']:		
 			room.nicks.append( nick )
 		else:
 			return self.hub._( 'Premission denied.' )
 
-		return self.hub._('Success.')
+		return self.hub._('Success')
 
 	def left( self, addr, params=[]):
 		# params ['room']
@@ -169,7 +171,7 @@ class chatroom_plugin(plugin.plugin):
 		if nick not in room.nicks:
 			return self.hub._('Params error.')
 		room.nicks.remove( nick )
-		return  self.hub._('Success.')
+		return  self.hub._('Success')
 
 	def listroom( self, addr, params=[] ):
 		#params ['room']

@@ -1,8 +1,8 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 
 # --- Chathist plugin.
 #
-#    Showing last N messages
+#    Send last N lines from chat to joined user
 #
 # ---
 
@@ -14,39 +14,26 @@ class chathist_plugin(plugin.plugin):
         
     def __init__(self,hub):
           super(chathist_plugin,self).__init__(hub)
-          self.N = 20
-          if 'chathist' not in self.hub.settings:
-            self.hub.settings['chathist']=[]
-          self.chlog=self.hub.settings['chathist']=[]
+
+          if 'chathist' not in self.hub.settings or self.hub.settings['chathist']==[]:
+		 self.hub.settings['chathist']={'lines': 20}
+	  if 'chathist.db' not in self.hub.settings:
+		 self.hub.settings['chathist.db'] = []
+
+          self.chlog=self.hub.settings['chathist.db']
+	  self.settings=self.hub.settings['chathist']
+
           self.slots['onConnected']=self.onConnected
           self.slots['onMainChatMsg']=self.onMainChatMsg
 		
     def onConnected(self,user):
-          self.hub.send_to_addr(user.addr,'>>>>>>>>>>>ChatHistory<<<<<<<<<<<<<<')
-          f = open('./chhist.log','r')
-          i = 0
-          lines = ""
-          for line in reversed(f.readlines()):
-            i+=1
-            lines= "%s%s" % ( line, lines)
-            if i==self.N-1:
-              break
-          lines= "\n%s" % lines
-          self.hub.send_to_addr(user.addr,unicode(lines,'utf-8'))
-          f.close()
-          self.hub.send_to_addr(user.addr,unicode('>>>>>>>>>>>ChatHistory<<<<<<<<<<<<<<','utf-8'))
-          return True
+	    self.hub.send_to_nick( user.nick, self.hub._( ' ---- Last history ---- \n%s' ) % '\n'.join( self.chlog ) )
+	    return True
           
     def onMainChatMsg(self, from_nick, message): 
-        open('./chhist.log','a').write(('['+time.strftime('%x %X')+'] <'+from_nick+'> '+message+'\n').encode('utf-8'))
-        for count, line in enumerate(open('./chhist.log')):
-          pass
-        if count > self.N-1:
-          f = open('./chhist.log')
-          lines = f.readlines()
-          f.close();
-          del lines[0]
-          f = open('./chhist.log',"w")
-          f.writelines(lines)
-          f.close();
+
+	self.chlog.append('[%s] <%s> %s' % ( time.strftime( '%x %X' ), from_nick, message ) )
+	if len( self.chlog ) > self.settings['lines']:
+		self.chlog.pop(0)
+
         return True    
