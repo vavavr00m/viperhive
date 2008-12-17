@@ -34,10 +34,10 @@ class dcppbot(object):
 	
 	def send_mainchat(self, text):
 		text=('<%s> %s|'%(self.NICK,text))
-		self.sock.send(text)
+		self.sock.send(text.encode( self.charset ))
 	def send_pm(self,to,text):
 		text=('$To: %s From: %s $<%s> %s|'%(to,self.NICK,self.NICK,text))
-		self.sock.send(text)
+		self.sock.send(text.encode( self.charset ))
 		
 	def drop_msgs(self):
 		while True:
@@ -74,12 +74,12 @@ class dcppbot(object):
 		lock=self.sock.recv(1024)
 		lock_key=re.findall('\$Lock[\s](.*?)[\s]', lock)[0]
 		key =self._createKey(lock).encode("utf-8")
-		self.sock.send('$Key %s|$ValidateNick %s|'%(key,self.NICK))
+		self.sock.send('$Key %s|$ValidateNick %s|'%(key,self.NICK.encode( self.charset )))
 		self.sock.recv(4096)
 		if self.PASS == None:
-			self.sock.send('$Version 1,0091|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.NICK,self.DESCR,self.TAG,self.SHARE))
+			self.sock.send(('$Version 1,0091|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' % (self.NICK,self.DESCR,self.TAG,self.SHARE)).encode( self.charset ))
 		else: 
-			self.sock.send('$Version 1,0091|$MyPass %s|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.PASS,self.NICK,self.DESCR,self.TAG,self.SHARE))
+			self.sock.send( ('$Version 1,0091|$MyPass %s|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.PASS,self.NICK,self.DESCR,self.TAG,self.SHARE) ).encode( self.charset ))
 
 
 		if newparser != None:

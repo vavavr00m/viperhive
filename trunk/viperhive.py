@@ -754,8 +754,8 @@ class DCHub:
 											self.hello.append(newsock)
 										
 										if not 'NoGetINFO' in supports:
-											newsock.send(self.get_nick_list())
-											newsock.send(self.get_op_list().encode(self.charset))
+											newsock.send(self.get_nick_list().encode( self.charset ))
+											#newsock.send(self.get_op_list().encode( self.charset ))
 										else:
 											for i in self.nicks.values():
 												newsock.send(i.MyINFO.encode(self.charset)+"|")
@@ -887,7 +887,7 @@ class DCHub:
 		else:
 			logging.warning('uknown addres: %s' % addr)
 
-	def get_nick_list(self):
+	def get_nick_list( self ):
 		nicklist="$NickList "
 		oplist="$OpList "
 		for user in self.nicks.values():
@@ -1136,7 +1136,8 @@ class DCHub:
 						plugins=__import__('plugins.'+params[0])
 						plugin=getattr(plugins,params[0])
 					else:
-						plugin=reload(sys.modules['plugins.'+params[0]])	
+						plugin=reload(sys.modules['plugins.'+params[0]])
+					logging.getLogger().setLevel(self.settings['core']['loglevel'])
 					logging.debug('loaded plugin file success')
 					cls=getattr(plugin,params[0]+'_plugin')
 					obj=cls(self)
