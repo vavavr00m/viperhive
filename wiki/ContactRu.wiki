@@ -1,0 +1,20 @@
+#labels Featured
+#Связь с разработчиками/Команда
+
+Автор/разработчик: zeus
+ * ICQ: 300734707
+ * Mail: gelios@gmail.com
+ * Jabber: gelios@gmail.com
+ * Сайт: http://hovel.ru
+
+Разработчик: alfardev
+ * ICQ: -
+ * Mail: -
+ * Jabber: -
+ * Сайт: -
+
+Бетатестер: FAT_32
+ * ICQ: -
+ * Mail: -
+ * Jabber: - 
+ * Сайт: http://fathub.ru
