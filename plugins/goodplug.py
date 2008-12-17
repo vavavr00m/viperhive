@@ -6,6 +6,18 @@
 
 import plugin
 import yaml
+import logging
+import traceback
+import os
+import sys
+import signal
+import re
+
+trace=None
+if 'format_exc' in dir(traceback):
+        from traceback import format_exc as trace
+else:
+        from traceback import print_exc as trace
 
 # --- !! Class name SHOULD BE FileName_plugin
 class goodplug_plugin(plugin.plugin):
@@ -23,8 +35,7 @@ class goodplug_plugin(plugin.plugin):
                 # --- REGISTERING COMMANDS ---
                 #self.commands['?']=self.?
                 self.commands['AddPlugin']=self.AddPlugin
-		self.commands['DelPlugin']=self.DelPlugin
-		
+                self.commands['DelPlugin']=self.DelPlugin
                 # --- REGISTERING SLOTS (On Event reaction)
 		#self.slots['on?']=self.on?
                 
@@ -41,26 +52,26 @@ class goodplug_plugin(plugin.plugin):
 	def AddPlugin(self,addr,params=[]):
 		ans=[]
 		try:
-			for i in os.listdir(self.path_to_plugins):
-				if self.recp['.py'].search(i)!=None and i!="__init__.py" and i!="plugin.py":
-					mod=self.recp['before.py'].search(i).group(0)
+			for i in os.listdir(self.hub.path_to_plugins):
+				if self.hub.recp['.py'].search(i)!=None and i!="__init__.py" and i!="plugin.py":
+					mod=self.hub.recp['before.py'].search(i).group(0)
 					ans.append(mod)
 			if params[0] in ans:
-				self.core_settings['autoload'].append(params[0])
-				return self._('Success')
+				self.hub.core_settings['autoload'].append(params[0])
+				return self.hub._('Success')
 			else:
-				return self._('No plugin')
+				return self.hub._('No plugin')
 		except:
 			logging.error('error while listing plugins: %s', trace())
 		
 		
 	def DelPlugin(self,addr,params=[]):
-		if params[0] in self.core_settings['autoload']:
+		if params[0] in self.hub.core_settings['autoload']:
 			t=[]
-			for j in self.core_settings['autoload']:
+			for j in self.hub.core_settings['autoload']:
 				if params[0] != j:
 					t.append(j)
-			self.core_settings['autoload']=t
-			return self._('Success')
+			self.hub.core_settings['autoload']=t
+			return self.hub._('Success')
 		else:
-			return self._('No plugin')
+			return self.hub._('No plugin')
