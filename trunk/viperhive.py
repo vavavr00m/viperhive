@@ -559,14 +559,17 @@ class DCHub:
 		logging.debug('command recived %s' % cmd)
 				#cmd=self.decode(cmd)
 		acmd=cmd.split(' ')
-
+		ncmd=acmd[0]
+		for j in self.commands:
+			if acmd[0].lower() == j.lower():
+				ncmd=j
 		if self.check_rights(self.addrs[addr],acmd[0]):
-			if acmd[0] in self.commands:
+			if ncmd in self.commands:
 				try:
 					if (len(acmd[1:]))>0:
-						result=self.commands[acmd[0]](addr,acmd[1:])
+						result=self.commands[ncmd](addr,acmd[1:])
 					else:
-						result=self.commands[acmd[0]](addr)
+						result=self.commands[ncmd](addr)
 					if result!='':
 						self.send_to_addr(addr,self._('<HUB> %s|') % result)
 						
