@@ -9,8 +9,15 @@ import thread
 import select
 import logging
 
+trace=None
+if 'format_exc' in dir(traceback):
+	from traceback import format_exc as trace
+else:
+	from traceback import print_exc as trace
+
+
 class dcppbot(object):
-	def __init__(self, HOST, PORT, NICK, PASS=None, parser=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0):
+	def __init__(self, HOST, PORT, NICK, PASS=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0, CHARSET='utf-8'):
 		self.HOST=HOST
 		self.PORT=PORT
 		self.NICK=NICK
@@ -18,9 +25,9 @@ class dcppbot(object):
 		self.PASS=PASS
 		self.TAG=TAG
 		self.SHARE=SHARE
-		self.parser=parser
 		self.sock=None
 		self.work=False
+		self.charset=CHARSET
 			
 	def close(self):
 		self.sock.close()
@@ -53,13 +60,16 @@ class dcppbot(object):
 
 		return out
 
+	def parser( self, msg ):
+		logging.error('BOT WARNING: No parser function')
+		return
+
 	def run( self, newparser=None ):
 		
 		logging.debug( 'RUNNING PYDCPPBOT MESSAGE PARSER' )
 
 		self.work=True
 		self.sock=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.settimeout(5)
 		self.sock.connect((self.HOST,self.PORT))
 		lock=self.sock.recv(1024)
 		lock_key=re.findall('\$Lock[\s](.*?)[\s]', lock)[0]
@@ -72,29 +82,56 @@ class dcppbot(object):
 			self.sock.send('$Version 1,0091|$MyPass %s|$GetNickList|$MyINFO $ALL %s %s%s$ $0$$%s$|' %(self.PASS,self.NICK,self.DESCR,self.TAG,self.SHARE))
 
 
-		if newparser!=None:
+		if newparser != None:
+			logging.debug ( 'New paserr defined' )
 			self.parser=newparser
-		if self.parser==None:
-			logging.error('BOT WARNING: No parser function')
+		
+		logging.debug( 'Bot parser: %s' % repr(self.parser) )
+		self.sock.settimeout(5)
+
 
 
 
 		while self.work:
-			(sr,sw,sx)=select.select([self.sock],[],[],1)
-			if sr==None:
-				continue
-			
-			s=self.sock.recv(4096)
-
-			# check if message too long?
-			k=5
-			while s[-1]!='|' or k>0:
+			try:
+				s = ''
 				(sr,sw,sx)=select.select([self.sock],[],[],1)
-				s+=self.sock.recv(4096)
-			if s[-1]!='|':
-				continue
-			if self.parser!=None:
+
+				if sr==[]:
+					continue
+				try:
+					s = unicode(self.sock.recv(4096), self.charset)
+				except:
+					logging.error( '%s \nString recived: %s' % (trace(), s) )
+					continue
+				
+
+				if s == '':   # connection break
+					logging.error( 'pydcppbot: connection lost' )
+					break
+
+				# check if message too long?
+				k=5
+				while s[-1] != '|' and k > 0:
+					(sr,sw,sx)=select.select([self.sock],[],[],1)
+					if sr == []:
+						logging.error( 'pydcppbot eror: String recived: %s' % (s,) )
+						break
+					try:
+						s += unicode(self.sock.recv(4096), self.charset)
+					except:
+						logging.error( '%s \nString recived: %s' % (trace(), s) )
+						continue
+				if s[-1] != '|':
+					continue
+
+				logging.debug( 'pydcppbot - parsing: %s' % s )
+				
 				self.parser( s )
+			except:
+				logging.error( trace() )
+				self.work = False
+				break
 
 		self.sock.send('$Quit|')
 		self.sock.close()
