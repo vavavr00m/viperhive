@@ -27,9 +27,6 @@ op:
 - listroom
 owner:
 - '*'
-- join
-- left
-- listroom
 reg:
 - Passwd
 - join
