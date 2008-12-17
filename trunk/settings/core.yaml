@@ -17,6 +17,7 @@ autoload:
 - iplog
 - chathist
 - chatroom
+- goodplug
 autosave: 120
 cmdsymbol: '!'
 hubinfo:
