@@ -538,7 +538,7 @@ class DCHub:
 			hubinfo='$HubINFO '
 			info=self.core_settings['hubinfo']
 			hubinfo+=self.core_settings['hubname']+'$'
-			hubinfo+=info.get('address','')+':'+self.core_settings['port']+'$'
+			hubinfo+='%s:%s$' % ( info.get('address',''), self.core_settings['port'] )
 			hubinfo+=info.get('description','')+'$'
 			hubinfo+=info.get('max_users','')+'$'
 			hubinfo+=info.get('min_share','')+'$'
