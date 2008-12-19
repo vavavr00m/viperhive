@@ -10,9 +10,19 @@ Viperhive написан на питоне. Для его запуска нуж�
 В данный момент поддерживаеются версии python 2.3 - 2.5
 не тестировалось с 2.6.
 
+== Windows ==
  * Качаем и ставим: [http://www.python.org/download/releases/ Python]
  * Качаем и ставим: [http://pyyaml.org/wiki/PyYAML PyYaml] (соответственно версии питона)
  * Качаем [http://code.google.com/p/viperhive/downloads/list Viperhive], распаковываем, запускаем viperhive.py
+
+== Linix ==
+=== Ubuntu/Deiban ===
+ * apt-get install python-yaml
+ * python viperhive.py
+
+=== RHEL/CentOS/Fedora ===
+ * yum install python-yaml
+ * python viperhive.py
 
 = Запуск =
 
