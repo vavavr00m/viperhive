@@ -7,10 +7,10 @@
  * Jabber: gelios@gmail.com
  * Сайт: http://hovel.ru
 
-Разработчик: alfardev
+Разработчик: Alfar
  * ICQ: 268837059
  * Mail: alfar@bk.ru
- * Jabber: -
+ * Jabber: AlfarDeW@jabber.ru; 268837059@qip.ru
  * Сайт: -
 
 Бетатестер: FAT_32
