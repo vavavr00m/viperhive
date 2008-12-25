@@ -27,7 +27,9 @@ hubinfo:
   type: ViperHive Hub
 hubname: Viperhive powered hub
 loglevel: 20
-port: 411
+port:
+- 411
+- 11411
 topic: Viperhive powered hub
 userip:
 - owner

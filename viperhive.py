@@ -140,7 +140,7 @@ class DCHub:
 
 		# DEFAULTS
 		defcore_settings={}
-		defcore_settings['port']=1411
+		defcore_settings['port']=[411]
 		defcore_settings['hubname']='Viperhive powered hub'
 		defcore_settings['topic']='Viperhive powered hub'
 		defcore_settings['cmdsymbol']='!'
@@ -167,6 +167,13 @@ class DCHub:
 			if not i in self.core_settings:
 				self.core_settings[i]=defcore_settings[i]
 
+
+		#------UPDATE SETTINGS FROM OLD VERSION:-------
+
+		# UPDATE PORT SETTINGS FOR VERSIONS <= svn r168
+		if not isinstance( self.core_settings['port'], list ):
+			self.core_settings['port'] = [ self.core_settings['port'] ]
+
 		if len(self.reglist)==0:
 				self.settings['reglist']=self.reglist=defreglist
 	   
@@ -179,11 +186,16 @@ class DCHub:
 		self.KEY=lock2key(self.LOCK)
 
 		# ---- SOCKETS ----
-
-		self.srvsock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-		self.srvsock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-		self.srvsock.bind( ("",self.core_settings['port']) )
-		self.srvsock.listen( 5 )
+		self.srvsock = []
+		for i in self.core_settings['port']:
+			try:
+				sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM ) 
+				sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+				sock.bind( ("", i) )
+				sock.listen( 5 )
+				self.srvsock.append( sock )
+			except:
+				logging.error('---- A PROBLEM WHILE BINDING TO PORT: %s \n %s----' % (i, trace(),) )
 		#self.descriptors = [[self.srvsock]]
 		self.descriptors=[]
 
@@ -223,8 +235,8 @@ class DCHub:
 		self.commands['Passwd']=self.Passwd
 		self.commands['PasswdTo']=self.PasswdTo #Usercommands +
 		self.commands['Kick']=self.Kick #Usercommands +
-		self.commands['UI']=self.UI
-		self.commands['SetTopic']=self.SetTopic
+		self.commands['UI']=self.UI #Usercoommands +
+		self.commands['SetTopic']=self.SetTopic #Usercommands +
 
 
 		# TRANSLATION SYSTEM
@@ -454,11 +466,11 @@ class DCHub:
 				self.autosaver.start()
 
 				while self.work:
-					(sread, swrite, sexc) = select.select( [self.srvsock], [], [], 1 )
+					(sread, swrite, sexc) = select.select( self.srvsock, [], [], 1 )
 
 					for sock in sread:
 						# Start new thread to avoid hub lock when user connecting
-						newsock, (host, port) = self.srvsock.accept()
+						newsock, (host, port) = sock.accept()
 						connhandler=threading.Thread(None,self.accept_new_connection,'newConnection: %s %s' %(str(host), str(port)),(newsock, host, port))
 						connhandler.setDaemon(True)
 						connhandler.start()

@@ -30,7 +30,7 @@ class chatroom( pydcppbot.dcppbot ):
 
 		hub.reglist[name]={'level':'chatroom','passwd': passwd}
 
-		super( chatroom, self ).__init__( 'localhost', hub.core_settings['port'], name, passwd )
+		super( chatroom, self ).__init__( 'localhost', hub.core_settings['port'][0], name, passwd )
 		
 		self.charset = self.hub.charset
 
