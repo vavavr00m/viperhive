@@ -30,8 +30,8 @@ class logger_plugin(plugin.plugin):
 		
 
 	def onMainChatMsg(self, from_nick, message):
-		open('./mc.log','a').write(('%s - %s: %s\n' % (time.strftime('%x %X'), from_nick, message)).encode('utf-8'))
+		open('./mc-%s.log' % time.strftime( '%d-%m-%y' ),'a').write(('%s - %s: %s\n' % (time.strftime('%x %X'), from_nick, message)).encode('utf-8'))
 		return True
 	def onPrivMsg(self, from_nick, to_nick, message):
-		open('./pm.log','a').write(('%s - %s -> %s: %s\n' % (time.strftime('%x %X'), from_nick, to_nick,  message)).encode('utf-8'))
+		open( './pm-%s.log' % time.strftime( '%d-%m-%y' ) , 'a' ).write(('%s - %s -> %s: %s\n' % (time.strftime('%x %X'), from_nick, to_nick,  message)).encode('utf-8'))
 		return True
