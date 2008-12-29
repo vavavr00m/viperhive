@@ -53,37 +53,123 @@ def genpass( size=10 ):
 
 
 
+
+def number_to_human_size(size, precision=1):
+	"""
+	Returns a formatted-for-humans file size.
+
+	``precision``
+	The level of precision, defaults to 1
+
+	Examples::
+
+	>>> number_to_human_size(123)
+	'123 Bytes'
+	>>> number_to_human_size(1234)
+	'1.2 KB'
+	>>> number_to_human_size(12345)
+	'12.1 KB'
+	>>> number_to_human_size(1234567)
+	'1.2 MB'
+	>>> number_to_human_size(1234567890)
+	'1.1 GB'
+	>>> number_to_human_size(1234567890123)
+	'1.1 TB'
+	>>> number_to_human_size(1234567, 2)
+	'1.18 MB'
+	"""
+	if size == 1:
+		return "1 Byte"
+	elif size < 1024:
+		return "%d Bytes" % size
+	elif size < (1024**2):
+		return ("%%.%if KB" % precision) % (size / 1024.00)
+	elif size < (1024**3):
+		return ("%%.%if MB" % precision) % (size / 1024.00**2)
+	elif size < (1024**4):
+		 return ("%%.%if GB" % precision) % (size / 1024.00**3)
+	elif size < (1024**5):
+		return ("%%.%if TB" % precision) % (size / 1024.00**4)
+
+
+	return ""
+		
+
+
+
+
+
+
 class DCUser:
+
+	recp={}
+	recp['tag']=re.compile('[<](.*)[>]$')
+	recp['slots']=re.compile('S:(\d*)')
+	recp['hubs']=re.compile('H:([0-9/]*)')
+	
+
 
 	def __init__(self,myinfo="",descr=None,addr=None):
 		
-		self.nick=None
-		self.connection=None
-		self.flag=None
-		self.mail=None
-		self.share=None
-		self.descr=None
-		self.MyINFO=None
-		self.level=0
-			
-		if len(myinfo)>0:
-			self.upInfo(myinfo)
-		self.descr=descr
-		self.addr=addr
+		self.nick = ''
+		self.connection = ''
+		self.flag = ''
+		self.mail = ''
+		self.share = 0
+		self.descr = None
+		self.MyINFO = None
+		self.level = 0
+		self.tag = ''
+		self.slots = 0
+		self.hubs = 0
+		self.sum_hubs = 0	
+		if len( myinfo )>0:
+			self.upInfo( myinfo )
+		self.descr = descr
+		self.addr = addr
+
+
 
 				
 
 	def upInfo(self,myinfo):
-		self.MyINFO=myinfo
-		ar=myinfo.split("$")
-		ar2=ar[2].split(" ",2)
-		self.nick=ar2[1]#nick
-		self.description=ar2[2]
-		self.connection=ar[4][0:-1]
-		self.flag=ar[4][-1]
-		self.mail=ar[5]
-	def get_ip(self):
+		self.MyINFO = myinfo
+		ar = myinfo.split("$")
+		ar2 = ar[2].split(" ",2)
+		self.nick = ar2[1]
+		self.description = ar2[2]
+		self.connection = ar[4][0:-1]
+		self.flag = ar[4][-1]
+		self.mail = ar[5]
+		self.share = int( ar[6] )
+
+		# Parsing TAG
+		tag = self.recp['tag'].search( self.description )
+		if self.tag != None:
+			self.tag=tag.group( 1 )
+			slots = self.recp['slots'].search( self.tag )
+			if slots != None:
+				self.slots = int( slots.group( 1 ) )
+
+			hubs = self.recp['hubs'].search( self.tag )
+			if hubs != None:
+				self.hubs = hubs.group( 1 )
+				try:
+					self.sum_hubs=self.get_sum_hubs()
+				except:
+					logging.warning( 'WRONG TAG: %s' % tag )
+
+
+
+	def get_ip( self ):
 		return self.addr.split(':')[0]
+
+	def get_sum_hubs( self ):
+		s=0
+		for i in self.hubs.split('/'):
+			s=s+int( i )
+		return s
+
 
 class DCHub:
 	# CONSTANTS
@@ -119,6 +205,7 @@ class DCHub:
 		self.recp['before.yaml']=re.compile('.*(?=\.yaml)')
 		self.recp['.py']=re.compile('\.py$')
 		self.recp['before.py']=re.compile('.*(?=\.py)')
+		self.recp['tag']=re.compile('[<](.*)[>]$')
 	   
 
 		# SET PATHS
@@ -152,12 +239,26 @@ class DCHub:
 		defcore_settings['autosave']=120
 		defcore_settings['userip']=['owner', 'op']
 
+		# ---- LIMITS ----
+
+		defcore_settings['max_users'] = 10000
+		defcore_settings['min_share'] = 0
+		defcore_settings['max_hubs'] = 1000
+		defcore_settings['min_slots'] = 0
+		defcore_settings['pass_limits'] = ['owner', 'op', 'chatroom']
+
+
+
 		defcore_settings['hubinfo']={'address':'example.com','description':'Viperhive powered hub','type':'ViperHive Hub', 'hubowner':'owner'}
 
 		defreglist={'admin':{'level':'owner', 'passwd':'megapass'}}
 
 
 		defprivlist={'owner':['*']}
+
+		
+	
+
 
 		# If loaded core_settings miss some stuff - load defaults
 		if len(self.core_settings)==0:
@@ -500,7 +601,7 @@ class DCHub:
 						if self.emit('onMyINFO',cmd):
 							self.send_to_all(cmd+"|")
 					except:
-						logging.warning('Wrong MyINFO by: %s with addr %s' (acmd[2],addr))
+						logging.warning( 'Wrong MyINFO by: %s with addr %s: %s' ( acmd[2], addr, trace() ) )
 						self.drop_user_by_addr(addr)
 		elif acmd[0]=='$To:':
 			if len(acmd)>5:
@@ -549,15 +650,15 @@ class DCHub:
 		elif acmd[0]=='$HubINFO' or acmd[0]=='$BotINFO':
 			hubinfo='$HubINFO '
 			info=self.core_settings['hubinfo']
-			hubinfo+=self.core_settings['hubname']+'$'
-			hubinfo+='%s:%s$' % ( info.get('address',''), self.core_settings['port'] )
-			hubinfo+=info.get('description','')+'$'
-			hubinfo+=info.get('max_users','')+'$'
-			hubinfo+=info.get('min_share','')+'$'
-			hubinfo+=info.get('min_slots','0')+'$'
-			hubinfo+=info.get('max_hubs','')+'$'
-			hubinfo+=info.get('type','')+'$'
-			hubinfo+=info.get('owner','')+'$'
+			hubinfo+='%s$' % self.core_settings['hubname']
+			hubinfo+='%s:%s$' % ( info.get('address',''), self.core_settings['port'][0] )
+			hubinfo+='%s$' % info.get('description','')
+			hubinfo+='%s$' % self.core_settings.get('max_users','10000')
+			hubinfo+='%s$' % self.core_settings.get('min_share','0') 
+			hubinfo+='%s$' % self.core_settings.get('min_slots','0')
+			hubinfo+='%s$' % self.core_settings.get('max_hubs','1000')
+			hubinfo+='%s$' % info.get('type','')
+			hubinfo+='%s$' % info.get('owner','')
 			hubinfo+='|'
 			self.send_to_addr( addr,hubinfo )
 
@@ -617,6 +718,10 @@ class DCHub:
 
 
 	def accept_new_connection( self, newsock, host, port ):
+		if len( self.nicks ) >= self.core_settings['max_users']:
+			newsock.close()
+			logging.warning( 'MAX USERS REACHED!!!' )
+			return
 		try:
 			addr='%s:%s' % (host, port)
 			logging.debug ('connecting: %s' % addr)
@@ -725,7 +830,7 @@ class DCHub:
 							try:
 								user=DCUser(info,newsock,addr)
 							except:
-								logging.warning('wrong myinfo from: %s addr: %s info: %s ' % (nick, addr, info))
+								logging.warning( 'wrong myinfo from: %s addr: %s info: %s %s' % ( nick, addr, info, trace() ) )
 								tr=False
 							if tr:
 								if nick in self.reglist:
@@ -735,6 +840,31 @@ class DCHub:
 								self.nicks[nick]=user
 								self.addrs[addr]=user
 								try:
+									# --- APPLY LIMITS ---
+
+									if user.share < self.core_settings['min_share'] and user.level not in self.core_settings['pass_limits']:
+										newsock.send( self._( '<HUB> Too low share. Min share is %s.|' ) % number_to_human_size( self.core_settings['min_share'] ) ).encode( self.charset )
+										logging.debug('not validated. dropping')
+										self.drop_user(addr, nick, newsock)
+										return
+
+									if user.sum_hubs > self.core_settings['max_hubs'] and user.level not in self.core_settings['pass_limits']:
+										newsock.send( self._( '<HUB> Too many hubs open. Max hubs is %s.|' ) % self.core_settings['max_hubs'] ).encode( self.charset )
+										logging.debug('not validated. dropping')
+										self.drop_user(addr, nick, newsock)
+										return
+
+									if user.slots < self.core_settings['min_slots'] and user.level not in self.core_settings['pass_limits']:
+										newsock.send( self._( '<HUB> Too few slots open. Min slots is %s.|' ) % self.core_settings['min_slots'] ).encode( self.charset )
+										logging.debug('not validated. dropping')
+										self.drop_user(addr, nick, newsock)
+										return
+
+									logging.debug('slots: %s, hubs: %s' % (user.slots, user.hubs) )
+
+
+										
+
 									if self.emit('onConnected',user):
 										logging.debug('Validated. Appending.')
 										
@@ -744,7 +874,6 @@ class DCHub:
 												val.append(newsock)
 												free=i
 												break
-
 										if free==None:
 											#adding worker
 											logging.info('Many users. Appending worker')
