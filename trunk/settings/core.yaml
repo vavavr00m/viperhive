@@ -27,6 +27,14 @@ hubinfo:
   type: ViperHive Hub
 hubname: Viperhive powered hub
 loglevel: 20
+max_hubs: 1000
+max_users: 100000
+min_share: 0
+min_slots: 0
+pass_limits:
+- owner
+- op
+- chatroom
 port:
 - 411
 - 11411

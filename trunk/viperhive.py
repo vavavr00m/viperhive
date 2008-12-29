@@ -401,6 +401,18 @@ class DCHub:
 		self.usercommands['Get']='$UserCommand 1 2 '+self._('Settings\\List settings files')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get&#124;|$UserCommand 1 2 '+self._('Settings\\List settings in file...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get %[line:'+self._('file?')+':]&#124;|'
 		self.usercommands['Set']='$UserCommand 1 2 '+self._('Settings\\Set variable')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set %[line:'+self._('File')+':] %[line:'+self._('Variable')+':] %[line:'+self._('New_Value')+':]&#124;|'
 
+		# -- Limits control
+
+		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set max users')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core max_users %[line:'+self._('MAX?')+':]&#124;|'
+		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set min share')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core min_share %[line:'+self._('New min share?')+':]&#124;|'
+		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set max hubs')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core max_hubs %[line:'+self._('Max hubs?')+':]&#124;|'
+		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set min slots')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core min_slots %[line:'+self._('Min Slots?')+':]&#124;|'
+
+
+
+
+
+
 		# -- User control
 		self.usercommands['AddReg']='$UserCommand 1 2 '+self._('Users\\Register selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[nick] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|$UserCommand 1 2 '+self._('Users\\Register nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[line:'+self._('Nick')+':] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|'
 		self.usercommands['ListReg']='$UserCommand 1 2 '+self._('Users\\List registred nicks')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListReg&#124;|'
@@ -419,6 +431,9 @@ class DCHub:
 	   
 		# -- Self control
 		self.usercommands['Passwd']='$UserCommand 1 2 '+self._('Me\\Set MY password...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Passwd %[line:'+self._('newpassword')+':]&#124;|'
+
+
+
 
 
 		# PLUGINS
@@ -843,19 +858,19 @@ class DCHub:
 									# --- APPLY LIMITS ---
 
 									if user.share < self.core_settings['min_share'] and user.level not in self.core_settings['pass_limits']:
-										newsock.send( self._( '<HUB> Too low share. Min share is %s.|' ) % number_to_human_size( self.core_settings['min_share'] ) ).encode( self.charset )
+										newsock.send( (self._( '<HUB> Too low share. Min share is %s.|' ) % number_to_human_size( self.core_settings['min_share'] ) ).encode( self.charset ) )
 										logging.debug('not validated. dropping')
 										self.drop_user(addr, nick, newsock)
 										return
 
 									if user.sum_hubs > self.core_settings['max_hubs'] and user.level not in self.core_settings['pass_limits']:
-										newsock.send( self._( '<HUB> Too many hubs open. Max hubs is %s.|' ) % self.core_settings['max_hubs'] ).encode( self.charset )
+										newsock.send( (self._( '<HUB> Too many hubs open. Max hubs is %s.|' ) % self.core_settings['max_hubs']).encode( self.charset ) )
 										logging.debug('not validated. dropping')
 										self.drop_user(addr, nick, newsock)
 										return
 
 									if user.slots < self.core_settings['min_slots'] and user.level not in self.core_settings['pass_limits']:
-										newsock.send( self._( '<HUB> Too few slots open. Min slots is %s.|' ) % self.core_settings['min_slots'] ).encode( self.charset )
+										newsock.send( (self._( '<HUB> Too few slots open. Min slots is %s.|' ) % self.core_settings['min_slots']).encode( self.charset ) )
 										logging.debug('not validated. dropping')
 										self.drop_user(addr, nick, newsock)
 										return
