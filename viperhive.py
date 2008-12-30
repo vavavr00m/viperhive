@@ -93,8 +93,7 @@ def number_to_human_size(size, precision=1):
 
 
 	return ""
-		
-
+	
 
 
 
@@ -180,8 +179,123 @@ class DCHub:
 	 
 	def _(self,string):  # Translate function
 		return self.lang.get(string,string)
-
 	
+	def tUCR( self, req ):
+		'''translate and make usercmmand request %[line:req:] '''
+		return '%%[line:%s:]' % self._( req )
+
+
+	def UC( self, menu, params ):
+		'''make UserCommands'''
+		return '$UserCommand 1 2 %s %s %s%s&#124;|' % ( menu, '$<%[mynick]>', self.core_settings['cmdsymbol'], ' '.join( params ) )
+
+
+	def Gen_UC( self ):
+		self.usercommands={}
+		# -- CORE USERCOMMANDS --
+
+		self.usercommands['Quit'] = self.UC( self._('Core\\Quit'), ['Quit'] )
+		self.usercommands['Save'] = self.UC( self._('Settings\\Save settings'), ['Save'] )
+		self.usercommands['SetTopic'] = self.UC( self._('Settings\\Set hub topic'), ['SetTopic', self.tUCR('New Topic')] )
+		self.usercommands['Help'] = self.UC( self._('Help'), ['Help'] )
+		self.usercommands['RegenMenu'] = self.UC( self._( 'Core\\Regenerate menu' ), ['RegenMenu'] )
+		self.usercommands['ReloadSettings'] = self.UC( self._( 'Core\\Reload settings (DANGEROUS)' ), ['ReloadSettings'] )
+
+		# -- settings get/set
+		self.usercommands['Get'] = self.UC( self._('Settings\\List settings files'), ['Get'] )
+
+		self.usercommands['Set'] = self.UC( self._('Settings\\Set variable'), ['Set', self.tUCR( 'File' ), self.tUCR( 'Variable' ), self.tUCR( 'New Value' )] )
+		 
+
+		# -- Limits control
+
+		self.usercommands['Set'] += self.UC( self._('Settings\\Limits\\Set max users'), ['Set core max_users', self.tUCR( 'New max users' )] )
+		self.usercommands['Set'] += self.UC( self._('Settings\\Limits\\Set min share'), ['Set core min_share', self.tUCR( 'New min share (in bytes)' )] )
+		self.usercommands['Set'] += self.UC( self._('Settings\\Limits\\Set max hubs'), ['Set core max_hubs', self.tUCR( 'New max hubs' )] )
+		self.usercommands['Set'] += self.UC( self._('Settings\\Limits\\Set min slots'), ['Set core min_slots', self.tUCR( 'New min slots' )] )
+
+
+
+
+		# -- User control
+		self.usercommands['AddReg'] = ''
+		self.usercommands['SetLevel'] = ''
+
+
+		for i in self.settings['privlist'].keys():
+			self.usercommands['AddReg'] += self.UC( self._( 'Users\\Selected\\Register selected nick as\\%s' ) % i, ['AddReg %[nick]', i, self.tUCR( 'Password' )] )
+
+
+		self.usercommands['AddReg'] += self.UC( self._( 'Users\\Register nick...' ), ['AddReg', self.tUCR( 'nick' ), self.tUCR( 'level' ), self.tUCR( 'Password' )] )
+
+		self.usercommands['ListReg'] = self.UC( self._( 'Users\\List registred nicks' ), ['ListReg'] )
+
+		self.usercommands['DelReg'] = self.UC( self._( 'Users\\Selected\\Unreg selected nick' ), ['DelReg %[nick]'] )
+		self.usercommands['DelReg'] += self.UC( self._( 'Users\\Unreg nick...' ), ['DelReg', self.tUCR('Nick')] )
+
+		for i in self.settings['privlist'].keys():
+			self.usercommands['SetLevel'] += self.UC( self._( 'Users\\Selected\\Set level for selected nick\\%s' ) % i, ['SetLevel %[nick]', i] )
+
+
+		self.usercommands['PasswdTo'] = self.UC( self._( 'Users\\Selected\\Set password for selected nick...' ), ['PasswdTo %[nick]', self.tUCR('new password')] )
+
+		self.usercommands['Kick'] = self.UC( self._( 'Kick selected nick' ), ['Kick %[nick]'] )
+
+		self.usercommands['UI'] = self.UC( self._( 'Users\\Selected\\User Info' ), ['UI %[nick]'] )
+
+
+
+
+		# -- Plugin control
+		
+		#self.usercommands['ListPlugins'] = self.UC( self._( 'Plugins\\List aviable plugins' ), ['ListPlugins'] )
+		#self.usercommands['ActivePlugins'] = self.UC( self._( 'Plugins\\List active plugins' ), ['ListPlugins'] )
+
+		menu = self._( 'Plugins\\Load/Reload Plugin\\' )
+		menuU = self._( 'Plugins\\Unload Plugin\\' )
+		loaded = self._( '(loaded)' )
+
+		aplugs = self.get_aviable_plugins()
+
+		self.usercommands['ReloadPlugin'] = ''
+		self.usercommands['LoadPlugin'] = ''
+		self.usercommands['UnloadPlugin'] = ''
+		
+		for i in aplugs:
+			if i in self.plugs:
+				self.usercommands['ReloadPlugin'] += self.UC( menu + i + '  ' + loaded, ['ReloadPlugin', i] )
+			else:
+				self.usercommands['LoadPlugin'] += self.UC( menu + i, ['LoadPlugin', i] )
+
+		for i in self.plugs.keys():
+			self.usercommands['UnloadPlugin'] += self.UC( menuU + i, ['Unload', i] )
+
+
+
+
+		#self.usercommands['ListPlugins']='$UserCommand 1 2 '+self._('Plugins\\List aviable plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListPlugins&#124;|'
+		#self.usercommands['ActivePlugins']='$UserCommand 1 2 '+self._('Plugins\\List active plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ActivePlugins&#124;|'
+		#self.usercommands['LoadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Load plugin..')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'LoadPlugin %[line:'+self._('plugin')+':]&#124;|'
+		#self.usercommands['UnloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Unload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'UnloadPlugin %[line:'+self._('plugin')+':]&#124;|'
+		#self.usercommands['ReloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Reload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ReloadPlugin %[line:'+self._('plugin')+':]&#124;|'
+	   
+		# -- Self control
+		self.usercommands['Passwd'] = self.UC( self._('Me\\Set MY password...'), [ 'Passwd', self.tUCR( 'new password' ) ] )
+
+		for i in self.plugs.values():
+			i.update_menu()
+			self.usercommands.update( i.usercommands )
+
+
+
+
+		#logging.debug ('UC: %s' % repr(self.usercommands) )
+		
+		return
+
+
+
+
 	def __init__( self ):
 
 		# COMMANDS
@@ -338,6 +452,8 @@ class DCHub:
 		self.commands['Kick']=self.Kick #Usercommands +
 		self.commands['UI']=self.UI #Usercoommands +
 		self.commands['SetTopic']=self.SetTopic #Usercommands +
+		self.commands['RegenMenu'] = self.RegenMenu #Usercommands +
+		self.commands['ReloadSettings'] = self.ReloadSettings #Usercommands +
 
 
 		# TRANSLATION SYSTEM
@@ -387,57 +503,11 @@ class DCHub:
 		logging.info('Language loaded: %s strings' % str(len(self.lang)))
 		logging.info('Help loaded: %s strings' % str(len(self.help)))
 
-		# USERCOMMANDS
-		self.usercommands={}
-		# -- CORE USERCOMMANDS --
-
-		self.usercommands['Quit']='$UserCommand 1 2 '+self._('Core\\Quit')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Quit&#124;|'
-		self.usercommands['Save']='$UserCommand 1 2 '+self._('Core\\Save settings')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Save&#124;|'
-		self.usercommands['SetTopic']='$UserCommand 1 2 '+self._('Set hub topic')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetTopic %[line:'+self._('NewTopic')+']&#124;|'
-
-		self.usercommands['Help']='$UserCommand 1 2 '+self._('Help')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Help&#124;|'
-
-		# -- settings get/set
-		self.usercommands['Get']='$UserCommand 1 2 '+self._('Settings\\List settings files')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get&#124;|$UserCommand 1 2 '+self._('Settings\\List settings in file...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Get %[line:'+self._('file?')+':]&#124;|'
-		self.usercommands['Set']='$UserCommand 1 2 '+self._('Settings\\Set variable')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set %[line:'+self._('File')+':] %[line:'+self._('Variable')+':] %[line:'+self._('New_Value')+':]&#124;|'
-
-		# -- Limits control
-
-		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set max users')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core max_users %[line:'+self._('MAX?')+':]&#124;|'
-		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set min share')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core min_share %[line:'+self._('New min share?')+':]&#124;|'
-		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set max hubs')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core max_hubs %[line:'+self._('Max hubs?')+':]&#124;|'
-		self.usercommands['Set']+='$UserCommand 1 2 '+self._('Core\\Set min slots')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Set core min_slots %[line:'+self._('Min Slots?')+':]&#124;|'
-
-
-
-
-
-
-		# -- User control
-		self.usercommands['AddReg']='$UserCommand 1 2 '+self._('Users\\Register selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[nick] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|$UserCommand 1 2 '+self._('Users\\Register nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'AddReg %[line:'+self._('Nick')+':] %[line:'+self._('Level')+':] %[line:'+self._('Password')+':]&#124;|'
-		self.usercommands['ListReg']='$UserCommand 1 2 '+self._('Users\\List registred nicks')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListReg&#124;|'
-		self.usercommands['DelReg']='$UserCommand 1 2 '+self._('Users\\Unreg selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[nick]&#124;|$UserCommand 1 2 '+self._('Users\\Unreg nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'DelReg %[line:'+self._('Nick')+':]&#124;|'
-		self.usercommands['SetLevel']='$UserCommand 1 2 '+self._('Users\\Set level for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'SetLevel %[nick] %[line:'+self._('Level')+':]&#124;|'
-		self.usercommands['PasswdTo']='$UserCommand 1 2 '+self._('Users\\Set password for selected nick...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'PasswdTo %[nick] %[line:'+self._('newpassword')+':]&#124;|'
-		self.usercommands['Kick']='$UserCommand 1 2 '+self._('Users\\Kick selected user')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Kick %[nick]&#124;|'
-		self.usercommands['UI']='$UserCommand 1 2 '+self._('Users\\User Info')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'UI %[nick]&#124;|'
-	   
-		# -- Plugin control
-		self.usercommands['ListPlugins']='$UserCommand 1 2 '+self._('Plugins\\List aviable plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ListPlugins&#124;|'
-		self.usercommands['ActivePlugins']='$UserCommand 1 2 '+self._('Plugins\\List active plugins')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ActivePlugins&#124;|'
-		self.usercommands['LoadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Load plugin..')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'LoadPlugin %[line:'+self._('plugin')+':]&#124;|'
-		self.usercommands['UnloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Unload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'UnloadPlugin %[line:'+self._('plugin')+':]&#124;|'
-		self.usercommands['ReloadPlugin']='$UserCommand 1 2 '+self._('Plugins\\Reload plugin...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'ReloadPlugin %[line:'+self._('plugin')+':]&#124;|'
-	   
-		# -- Self control
-		self.usercommands['Passwd']='$UserCommand 1 2 '+self._('Me\\Set MY password...')+'$<%[mynick]> '+self.core_settings['cmdsymbol']+'Passwd %[line:'+self._('newpassword')+':]&#124;|'
-
-
-
-
 
 		# PLUGINS
 		self.plugs={}
+
+		self.Gen_UC()
 
 		# AUTOLOAD PLUGINS
 		for i in self.core_settings['autoload']:
@@ -1175,7 +1245,7 @@ class DCHub:
 			else:
 				return self._('Params error')
 
-	def Save(self, params):
+	def Save(self, params=[]):
 		try:
 			self.save_settings()
 			return True
@@ -1183,8 +1253,22 @@ class DCHub:
 			return False
 
 		
-		# -- User Control
+	def RegenMenu( self, params = [] ):
+		try:
+			self.Gen_UC()
+			self.send_usercommands_to_all()
+			return True
+		except:
+			return False
 
+	def ReloadSettings( self, params = [] ):
+		try:
+			self.load_settings()
+		except:
+			return False
+		return True
+
+	# --- User Control
 	def AddReg(self,addr,params=[]):
 		# Params should be: 'nick' 'level' 'passwd'
 		if len(params)==3:
@@ -1270,17 +1354,23 @@ class DCHub:
 
 	# -- Plugin control
 
-	def ListPlugins(self,addr):
-		logging.debug('listing plugins')
-		ans=' -- Aviable plugins --\n'
+	def get_aviable_plugins( self ):
+		ans = []
 		try:
 			for i in os.listdir(self.path_to_plugins):
 				if self.recp['.py'].search(i)!=None and i!="__init__.py" and i!="plugin.py":
 					mod=self.recp['before.py'].search(i).group(0)
-					ans+="%s\n" % mod
+					ans.append( mod )
 			return ans
 		except:
 			logging.error('error while listing plugins: %s', trace())
+		return None
+
+
+	def ListPlugins(self,addr):
+		logging.debug('listing plugins')
+		ans = self._(' -- Aviable plugins --\n%s') % '\n'.join( self.get_aviable_plugins() )
+		return ans
 
 	def LoadPlugin(self,addr,params=[]):
 		# Params should be: 'plugin'
@@ -1299,7 +1389,7 @@ class DCHub:
 					obj=cls(self)
 					self.plugs[params[0]]=obj
 					self.commands.update(obj.commands)
-					self.usercommands.update(obj.usercommands)
+					#self.usercommands.update(obj.usercommands)
 					logging.debug( 'Plugin %s slots: %s' % (params[0], repr( obj.slots ) ) )
 					for key,value in obj.slots.iteritems():
 						logging.debug( 'Activating Slot: %s, on plugin %s' % ( key, params[0] ) )
@@ -1311,6 +1401,8 @@ class DCHub:
 						else:
 							self.slots[key]=[value]
 					logging.debug( 'MessageMap: %s' % repr( self.slots ))
+
+					self.Gen_UC()
 					self.send_usercommands_to_all()
 					return self._('Success')
 				except:
