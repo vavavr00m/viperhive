@@ -17,7 +17,7 @@ else:
 
 
 class dcppbot(object):
-	def __init__(self, HOST, PORT, NICK, PASS=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002>', SHARE=0, CHARSET='utf-8'):
+	def __init__(self, HOST, PORT, NICK, PASS=None, DESCR='PYDCPPBOT', TAG='<PyDC++BOT V:0.002 S:10 H:0/0/0>', SHARE=0, CHARSET='utf-8'):
 		self.HOST=HOST
 		self.PORT=PORT
 		self.NICK=NICK
@@ -89,7 +89,7 @@ class dcppbot(object):
 		logging.debug( 'Bot parser: %s' % repr(self.parser) )
 		self.sock.settimeout(5)
 
-
+		self.sock.send( '$BotINFO|' )
 
 
 		while self.work:
