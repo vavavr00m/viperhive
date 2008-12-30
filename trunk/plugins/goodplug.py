@@ -41,14 +41,27 @@ class goodplug_plugin(plugin.plugin):
                 
                 # --- REGISTERING USERCOMMANDS
 		#self.usercommands['?']='$UserCommand 1 2 '+hub._('MENU\\ITEM')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'COMMAND %[nick] %[line:'+hub._('message')+':]&#124;|'
-		self.usercommands['AddPlugin']='$UserCommand 1 2 '+hub._('Plugins\\Add plugin...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'AddPlugin %[line:'+hub._('plugin')+':]&#124;|'
-		self.usercommands['DelPlugin']='$UserCommand 1 2 '+hub._('Plugins\\Del plugin...')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'DelPlugin %[line:'+hub._('plugin')+':]&#124;|'
+		#self.usercommands['AddPlugin']='$UserCommand 1 2 '+hub._('Plugins\\Add plugin\\')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'AddPlugin %[line:'+hub._('plugin')+':]&#124;|'
+		#self.usercommands['DelPlugin']='$UserCommand 1 2 '+hub._('Plugins\\Del plugin\\')+'$<%[mynick]> '+hub.core_settings['cmdsymbol']+'DelPlugin %[line:'+hub._('plugin')+':]&#124;|'
                 
 		
 	#def COMMAND(self,addr,params=[]):
 	#	#params 'nick' 'message'
 	#
 	#	return RESULT_STRING
+	def update_menu( self ):
+		self.usercommands['AddPlugin']=''
+		self.usercommands['DelPlugin']=''
+
+		for i in self.hub.get_aviable_plugins():
+			if i not in self.hub.core_settings['autoload']:
+				self.usercommands['AddPlugin'] += self.hub.UC( self.hub._( 'Plugins\\Add plugin to autolad\\%s' )% i, ['AddPlugin', i] )
+
+		for i in self.hub.core_settings['autoload']:
+			self.usercommands['DelPlugin'] += self.hub.UC( self.hub._( 'Plugins\\Remove plugin from autolad\\%s' ) % i, ['DelPlugin', i] )
+
+
+
 	def AddPlugin(self,addr,params=[]):
 		ans=[]
 		try:
@@ -58,6 +71,10 @@ class goodplug_plugin(plugin.plugin):
 					ans.append(mod)
 			if params[0] in ans:
 				self.hub.core_settings['autoload'].append(params[0])
+				self.hub.Gen_UC()
+				self.hub.send_usercommands_to_all()
+		
+
 				return self.hub._('Success')
 			else:
 				return self.hub._('No plugin')
@@ -72,6 +89,10 @@ class goodplug_plugin(plugin.plugin):
 				if params[0] != j:
 					t.append(j)
 			self.hub.core_settings['autoload']=t
+			self.hub.Gen_UC()
+			self.hub.send_usercommands_to_all()
+		
+
 			return self.hub._('Success')
 		else:
 			return self.hub._('No plugin')

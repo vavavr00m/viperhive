@@ -12,3 +12,6 @@ class plugin(object):
 	def unload( self ):
 		pass
 
+	def update_menu( self ):
+		pass
+
