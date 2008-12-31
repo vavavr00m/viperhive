@@ -732,6 +732,11 @@ class DCHub:
 					if self.addrs[addr].nick==sender:
 						if self.emit('onSearchResult',sender,reciver,cmd):
 							self.send_to_nick(reciver,cmd+"|")
+
+
+		elif acmd[0] == '$GetNickList':
+			self.send_to_addr( addr, self.get_nick_list() )
+
 		elif acmd[0]=='$HubINFO' or acmd[0]=='$BotINFO':
 			hubinfo='$HubINFO '
 			info=self.core_settings['hubinfo']
