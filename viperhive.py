@@ -1369,7 +1369,7 @@ class DCHub:
 			return ans
 		except:
 			logging.error('error while listing plugins: %s', trace())
-		return None
+		return ans
 
 
 	def ListPlugins(self,addr):
