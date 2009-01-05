@@ -268,7 +268,7 @@ class DCHub:
 				self.usercommands['LoadPlugin'] += self.UC( menu + i, ['LoadPlugin', i] )
 
 		for i in self.plugs.keys():
-			self.usercommands['UnloadPlugin'] += self.UC( menuU + i, ['Unload', i] )
+			self.usercommands['UnloadPlugin'] += self.UC( menuU + i, ['UnloadPlugin', i] )
 
 
 
@@ -1435,6 +1435,7 @@ class DCHub:
 							if key in self.slots:
 								if value in self.slots[key]:
 									self.slots[key].remove(value)
+						self.Gen_UC()
 						self.send_usercommands_to_all()
 						return self._('Success')
 					else:
