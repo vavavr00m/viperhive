@@ -51,7 +51,7 @@ class mute_plugin(plugin.plugin):
                 if user.level in self.mutelist['immune']:
                         return True
                 if user.nick in self.mutelist['nicks']:
-			if datetime.datetime(*(time.strptime(self.banlist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
+			if datetime.datetime(*(time.strptime(self.mutelist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 if self.mutelist['nicks'][user.nick]['what'] in ['mc', 'all']:
                                         return False
                         else:
@@ -59,7 +59,7 @@ class mute_plugin(plugin.plugin):
 
                 adr=user.addr.split(':')[0]
                 if adr in self.mutelist['addrs']:
-			if datetime.datetime(*(time.strptime(self.banlist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
+			if datetime.datetime(*(time.strptime(self.mutelist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 if self.mutelist['nicks'][adr]['what'] in ['mc', 'all']:
                                         return False
                         else:
@@ -73,7 +73,7 @@ class mute_plugin(plugin.plugin):
                 if user.level in self.mutelist['immune']:
                         return True
                 if user.nick in self.mutelist['nicks']:
-			if datetime.datetime(*(time.strptime(self.banlist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
+			if datetime.datetime(*(time.strptime(self.mutelist['nicks'][user.nick]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 if self.mutelist['nicks'][user.nick]['what'] in ['pm', 'all']:
                                         return False
                         else:
@@ -81,7 +81,7 @@ class mute_plugin(plugin.plugin):
 
                 adr=user.addr.split(':')[0]
                 if adr in self.mutelist['addrs']:
-			if datetime.datetime(*(time.strptime(self.banlist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
+			if datetime.datetime(*(time.strptime(self.mutelist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
                                 if self.mutelist['nicks'][adr]['what'] in ['pm', 'all']:
                                         return False
                         else:
