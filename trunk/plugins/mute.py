@@ -60,7 +60,7 @@ class mute_plugin(plugin.plugin):
                 adr=user.addr.split(':')[0]
                 if adr in self.mutelist['addrs']:
 			if datetime.datetime(*(time.strptime(self.mutelist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
-                                if self.mutelist['nicks'][adr]['what'] in ['mc', 'all']:
+                                if self.mutelist['addrs'][adr]['what'] in ['mc', 'all']:
                                         return False
                         else:
                                 self.mutelist['addrs'].pop(adr)
@@ -82,7 +82,7 @@ class mute_plugin(plugin.plugin):
                 adr=user.addr.split(':')[0]
                 if adr in self.mutelist['addrs']:
 			if datetime.datetime(*(time.strptime(self.mutelist['addrs'][adr]['expired'],'%Y-%m-%dT%H:%M:%S')[0:6]))>datetime.datetime.now():
-                                if self.mutelist['nicks'][adr]['what'] in ['pm', 'all']:
+                                if self.mutelist['addrs'][adr]['what'] in ['pm', 'all']:
                                         return False
                         else:
                                 self.mutelist['addrs'].pop(adr)
