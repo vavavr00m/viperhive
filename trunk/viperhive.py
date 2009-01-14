@@ -800,6 +800,7 @@ class DCHub:
 					#self.parse_cmd(acmd[1][1:],addr)
 				else:
 					if self.emit('onMainChatMsg',acmd[0][1:-1],acmd[1]):
+						self.emit('ChatHistEvent',acmd[0][1:-1],acmd[1])
 						self.send_to_all(msg+"|")
 			else:
 				logging.warning('user tried to use wrong nick in MC. Real nick: %s. Message: %s' % (self.addrs[addr].nick, msg))
@@ -1105,7 +1106,7 @@ class DCHub:
 				self.drop_user_by_nick(nick)
 				logging.debug('socket error %s. user lost!' % trace() )
 		else:
-			logging.warning('send to unknown nick: %s' % nick)
+			logging.debug('send to unknown nick: %s' % nick)
 
 	def send_to_addr(self,addr,msg):
 		if addr in self.addrs:
@@ -1152,6 +1153,7 @@ class DCHub:
 		logging.debug('saving settigs')
 		try:
 			for mod, sett in self.settings.items():
+##			for mod, sett in self.plugs:
 				try:
 					logging.info('saving settings for %s' % mod)
 					f=open(self.path_to_settings+'/'+mod+'.yaml','wb')
@@ -1326,10 +1328,13 @@ class DCHub:
 	def Kick (self, addr, params=[]):
 		# Params should be: 'nick'
 
-		if len(params)==1:
+		if len(params)>=1:
 			if params[0] in self.nicks:
 				if self.nicks[params[0]].level in self.protected:
 					return self._('User protected!')
+				if len(params)>1:
+					fnick=self.core_settings['hubname'].replace(' ','_')
+					self.send_pm_to_nick(fnick,params[0],' '.join(params[1:]))
 				self.drop_user_by_nick(params[0])
 				return self._('Success')
 			else:
