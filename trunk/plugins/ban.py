@@ -97,7 +97,7 @@ class ban_plugin(plugin.plugin):
                                 reason=" ".join(params[2:])
                         else:
                                 # permanent ban
-                                toban='never'
+                                toban=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
                                 reason=" ".join(params[1:])
 
                         self.banlist['addrs'][params[0]]={'expired':toban,'reason':reason}
