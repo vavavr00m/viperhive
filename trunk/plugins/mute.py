@@ -123,7 +123,7 @@ class mute_plugin(plugin.plugin):
                                 # 2000 years
                                 tomute=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
                                 reason=" ".join(params[2:])
-
+                        reason+=" by "+self.hub.addrs[addr].nick
                         self.mutelist['nicks'][params[0]]={'what':what,'expired':tomute,'reason':reason}
                         return self.hub._('Success')
 
@@ -148,7 +148,7 @@ class mute_plugin(plugin.plugin):
                                 # 2000 years
                                 tomute=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
                                 reason=" ".join(params[2:])
-
+                        reason+=" by "+self.hub.addrs[addr].nick
                         self.mutelist['addrs'][params[0]]={'what':what,'expired':tomute,'reason':reason}
                         return self.hub._('Success')
 

@@ -23,6 +23,7 @@ class regme_plugin(plugin.plugin):
         
                 # --- REGISTERING COMMANDS ---
                 self.commands['regme']=self.regme
+                self.commands['reghelp']=self.reghelp
 		
                 # --- REGISTERING SLOTS (On Event reaction)
 		#self.slots['on?']=self.on?
@@ -46,3 +47,5 @@ class regme_plugin(plugin.plugin):
                 self.hub.send_usercommands_to_nick(nick)
 		
                 return self.hub._('Registered nick: %s with password: %s') % (nick, password)
+	def reghelp(self,addr,params=[]):
+                return self.hub._('To register please use the %sregme. The syntax is: %sregme <password>') % (self.hub.core_settings['cmdsymbol'],self.hub.core_settings['cmdsymbol'])
