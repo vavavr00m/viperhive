@@ -99,6 +99,7 @@ class ban_plugin(plugin.plugin):
                                 # permanent ban
                                 toban=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
                                 reason=" ".join(params[1:])
+                        reason+=" by "+self.hub.addrs[addr].nick
 
                         self.banlist['addrs'][params[0]]={'expired':toban,'reason':reason}
 
@@ -129,7 +130,7 @@ class ban_plugin(plugin.plugin):
                         else:
                                 toban=(datetime.datetime.now()+datetime.timedelta(days=999999)).strftime('%Y-%m-%dT%H:%M:%S')
                                 reason=" ".join(params[1:])
-
+                        reason+=" by "+self.hub.addrs[addr].nick
                         self.banlist['nicks'][params[0]]={'expired':toban,'reason':reason}
 
                         self.hub.drop_user_by_nick(params[0])
